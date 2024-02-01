@@ -247,6 +247,66 @@ int run_init(int argc, char const* argv[])
         }
         strcat(cwd, "/.neogit");
         fprintf(repo_list, "%s\n", cwd);
+        // chdir(".neogit");
+        // DIR* repo = opendir(".");
+        // bool global_done = false;
+        // while((entry = readdir(repo)) != NULL)
+        // {
+        //     if(strcmp(entry->d_name, "global_config")==0 && entry->d_type == DT_DIR)
+        //     {
+        //         global_done = true;
+        //         break;
+        //     }
+        // }
+        // bool email_done = false;
+        // bool username_done = false;
+        // if(global_done)
+        // {
+        //     chdir("global_config");
+        //     repo = opendir(".");
+        //     while((entry = readdir(repo)) != NULL)
+        //     {
+        //         if(strcmp(entry->d_name, "global_name") == 0 && entry->d_type == DT_REG)
+        //         {
+        //             username_done = true;
+        //         }
+        //         if(strcmp(entry->d_name, "global_email") == 0 && entry->d_type == DT_REG)
+        //         {
+        //             email_done = true;
+        //         }
+        //     }
+        //     if(username_done && email_done)
+        //     {
+
+        //     }
+        //     else if(username && !email_done)
+        //     {
+
+        //     }
+        //     else if(!username_done && email_done)
+        //     {
+        //         fprintf(stderr, "Please config your username\n");
+        //         chdir(cwd);
+        //         DIR* a = opendir(".");
+        //         if(mkdir("config", 0755) != 0)
+        //         {
+        //             fprintf(stderr, "Error in setting global email\n");
+        //             return 1;
+        //         }
+        //         strcat(cwd, "config");
+        //         system(cp /home/asus/Documents/neogit/global_config/global_email cwd);
+        //     }
+        //     else if(!username_done && !email_done)
+        //     {
+        //         fprintf(stderr, "Please config your username and email\n");
+        //         return 1;
+        //     }
+
+        }
+        
+
+
+        closedir(repo);
     }
     else
     {
