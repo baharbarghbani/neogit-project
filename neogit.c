@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include<time.h>
-#include "add.h"
+#include "add.c"
 char *username;
 char *email;
 FILE *repo_list;
@@ -187,8 +187,10 @@ int main(int argc, char const* argv[])
         else if(strcmp(line, "config user.email") == 0) return email_alias(argc,argv);
         else if(strcmp(line, "config --global user.name") == 0) return username_global_alias(argc,argv);
         else if(strcmp(line, "config --global user.email") == 0) return email_global_alias(argc,argv);
-        else if(strcmp(line, "config alias") == 0) return alias(argc,argv);
-        else if(strcmp(line, "config --global alias") == 0) return global_alias(argc,argv);
+        // else if(strcmp(line, "config alias") == 0) return alias(argc,argv);
+        // else if(strcmp(line, "config --global alias") == 0) return global_alias(argc,argv);
+        // else if(strcmp(line, "add") == 0) return add_alias(argc,argv);
+
         }
         fprintf(stderr, "Invalid command\n");
     }
