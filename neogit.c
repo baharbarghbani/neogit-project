@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include<time.h>
+#include "add.h"
 char *username;
 char *email;
 FILE *repo_list;
