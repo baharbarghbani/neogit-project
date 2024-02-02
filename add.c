@@ -7,22 +7,26 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include<time.h>
+#include<limits.h>
+#include<libgen.h>
 #include "repo_check.c"
-#define MAX_ADDRESS_SIZE 1000
 #define OPENNING_DIRECTORY_ERROR "Error openning directory\n"
 
 void repo_check(bool exist, char* address, char* repo_address);
-int add(int argc, char const* argv[])
+int add(int argc, char* argv[])
 {
     char* address = (char*)malloc(MAX_ADDRESS_SIZE);  //used
     char* repo_address = (char*)malloc(MAX_ADDRESS_SIZE); //used
     char* cwd = (char*)malloc(MAX_ADDRESS_SIZE); //used
     char* tmp_cwd = (char*)malloc(MAX_ADDRESS_SIZE);
-    char* argv = (char*)malloc(MAX_ADDRESS_SIZE); //used
+    char* argv_copy = (char*)malloc(MAX_ADDRESS_SIZE); //used
     char* path = (char*)malloc(MAX_ADDRESS_SIZE); //used
     char* stage_path = (char*)malloc(MAX_ADDRESS_SIZE); //used
     char* stage_txt = (char*)malloc(MAX_ADDRESS_SIZE); //used
     char* line = (char*)malloc(MAX_ADDRESS_SIZE);
+    char* name = (char*)malloc(MAX_ADDRESS_SIZE);
+    char* command = (char*)malloc(MAX_ADDRESS_SIZE);
+    char* count_path = (char*)malloc(MAX_ADDRESS_SIZE);
     bool stage_exists = false;
     bool found = false;
     bool exists = false;
@@ -33,21 +37,27 @@ int add(int argc, char const* argv[])
     bool is_name = false;
     bool is_directory = false;
     bool is_valid = false;
+    int line_count;
     struct dirent* entry;
-    struct stat* path_stat;
+    struct stat path_stat;
     FILE* stage;
+    FILE* line_counting;
     if(getcwd(cwd, 2000) == NULL)
     {
         fprintf(stderr, OPENNING_DIRECTORY_ERROR);
         return 1;
     }
+    printf("1");
     repo_check(&exists, address, repo_address); //checking for initialization
+    printf("2");
     if(!exists){
         fprintf(stderr, "Repository hass not been initialized\n");
         return 1;
     }
     strcat(repo_address, "/.neogit");
     chdir(repo_address);
+    strcpy(count_path, repo_address);
+    strcat(count_path, "/line_count");
     DIR* dir = opendir("."); //changing to repo directory 
     while((entry = readdir(dir)) != NULL) //searching if the stage directory exists
     {
@@ -59,12 +69,16 @@ int add(int argc, char const* argv[])
     }
     if(!stage_exists)
     {
+        line_counting = fopen(count_path, "w");
+        fprintf(line_counting, "%d", 1);
+        fclose(line_counting);
         if(mkdir("stage", 0755) != 0)
         {
             fprintf(stderr, "Error making stage directory\n");
             return 1;
         }
     }
+    line_counting = fopen(count_path, "r");
     strcpy(stage_txt, repo_address);
     strcat(stage_txt, "/stage_list.txt");
     strcpy(stage_path, repo_address);
@@ -75,15 +89,15 @@ int add(int argc, char const* argv[])
     chdir(cwd);
     dir = opendir(".");//back in the current directory
 
-    strcpy(argv, argv[2]);
+    strcpy(argv_copy, argv[2]);
 
-    if(strstr(argv, "/") != NULL)  is_address = true;  //checking if the command is address or name
+    if(strstr(argv_copy, "/") != NULL)  is_address = true;  //checking if the command is address or name
     else{is_name = true;};
 
-    strcpy(argv[2], argv);
+    strcpy(argv[2], argv_copy);
     if(is_address) //command is address
     {
-        if(strstr(argv, ".neogit") != NULL) //is it in the repo or not
+        if(strstr(argv_copy, ".neogit") != NULL) //is it in the repo or not
         {
             is_in_repo = true;
         }
@@ -105,7 +119,7 @@ int add(int argc, char const* argv[])
             }
             if(is_valid) //address is valid
             {
-                path = realpath(argv[2], NULL); //getting the absolute path
+                char* path_copy = realpath(argv[2], path); //getting the absolute path
             }
         }
     }
@@ -131,7 +145,12 @@ int add(int argc, char const* argv[])
            strcat(path, argv[2]);  //absolute path is done   
         }
     }
-    if(stat(path_stat, &path) == -1)
+    while(1)
+    {
+        if((name = strstr(path, "/"))!= NULL)  break;
+    }
+    name = name + 1;
+    if(stat(path, &path_stat) == -1)
     {
         fprintf(stderr, "Error in stat\n");
         return 1;
@@ -143,36 +162,65 @@ int add(int argc, char const* argv[])
         fprintf(stderr, "The reffered file is not neither a file nor directory\n");
         return 1;
     }
+    closedir(dir);
 //first add file
 if(is_file)
 {
-    int line_count = 0;
-    stage = fopen(stage_txt, "r");
-    if(stage == NULL)
+    FILE* text = fopen(stage_txt, "r");
+    if(text == NULL)
     {
         fprintf(stderr, "Error openning stage_list.txt\n");
         return 1;
     }
-    while(fgets(line, 1000, stage) != NULL)
+    while(fgets(line, 1000, text) != NULL)
     {
-        line_count++;
         size_t ln = strlen(line);
         line[ln - 1] = '\0';
-        if(strcmp(line, path) == 0)
+        if(strcmp(line, path) == 0)  //the address of the previously added file is in line
         {
             repeated = true;
             break;
         }
     }
-    rewind(stage);
-    fclose(stage);
-    if(!repeated)
+    rewind(text);
+    fclose(text);
+    if(!repeated) //line_count is open in read mode
     {
-        
+        chdir(repo_address);
+        dir = opendir("."); //we're in .neogit repo
+        fread(&line_count, sizeof(int), 1, line_counting);
+        fclose(line_counting);
+        text = fopen(stage_txt, "a");
+        fprintf(text, "%s  %s\n", path, name);
+        fclose(text);
+        line_count++;
+        line_counting = fopen(count_path, "w");
+        fprintf(line_counting, "%d", line_count);
+        fclose(line_counting);
+        closedir(dir);
+        chdir(stage_path);
+        dir = opendir(".");
+        char* stage_copy = (char*)malloc(MAX_ADDRESS_SIZE);
+        strcpy(stage_copy,stage_path);
+        strcat(stage_copy, "/");
+        strcat(stage_copy, name);
+        sprintf(command, "cp %s %s", path, stage_copy);
+        system(command);
+        closedir(dir); 
     }
-    
-
-
+    if(repeated)
+    {
+        chdir(stage_path);
+        dir = opendir(".");
+        remove(line);
+        char* stage_copy = (char*)malloc(MAX_ADDRESS_SIZE);
+        strcpy(stage_copy,stage_path);
+        strcat(stage_copy, "/");
+        strcat(stage_copy, name);
+        sprintf(command, "cp %s %s", path, stage_copy);
+        system(command);
+        closedir(dir);
+    }
 }
 
 

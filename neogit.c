@@ -12,16 +12,16 @@ char *username;
 char *email;
 FILE *repo_list;
 
-int run_init(int argc, char const* argv[]);
-int config(int argc, char const* argv[]);
-int global_config(int argc, char const* argv[]);
-int alias(int argc, char const* argv[]);
-int global_alias(int argc, char const* argv[]);
-int username_alias(int argc, char const* argv[]);
-int email_alias(int argc, char const* argv[]);
-int username_global_alias(int argc, char const* argv[]);
-int email_global_alias(int argc,char const* argv[]);
-int main(int argc, char const* argv[])
+int run_init(int argc, char* argv[]);
+int config(int argc, char* argv[]);
+int global_config(int argc, char* argv[]);
+int alias(int argc, char* argv[]);
+int global_alias(int argc, char* argv[]);
+int username_alias(int argc, char* argv[]);
+int email_alias(int argc, char* argv[]);
+int username_global_alias(int argc, char* argv[]);
+int email_global_alias(int argc,char* argv[]);
+int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
@@ -197,7 +197,7 @@ int main(int argc, char const* argv[])
     closedir(now);
     return 0;
 }
-int run_init(int argc, char const* argv[])
+int run_init(int argc, char* argv[])
 {
     char cwd[2000];
     char tmp_cwd[2000];
@@ -303,20 +303,15 @@ int run_init(int argc, char const* argv[])
         //     }
 
         }
-        
-
-
-        closedir(repo);
-    }
+        // closedir(repo);
     else
     {
         fprintf(stderr, "Repository has already been initialized\n");
         return 1;
     }
-
     return 0;
 }
-int config(int argc, char const* argv[])
+int config(int argc, char* argv[])
 {
     if (argc != 4)
     {
@@ -449,7 +444,7 @@ int config(int argc, char const* argv[])
     free(address);
     return 0;
 }
-int global_config(int argc, char const* argv[])
+int global_config(int argc, char* argv[])
 {
     if (argc != 5)
     {
@@ -569,7 +564,7 @@ int global_config(int argc, char const* argv[])
     fclose(repo_list);
     return 0;
 }
-int alias(int argc, char const* argv[])
+int alias(int argc, char* argv[])
 {
     if(argc != 4)
     {
@@ -684,7 +679,7 @@ int alias(int argc, char const* argv[])
     free(tmp_cwd);
     return 0;
 }
-int global_alias(int argc, char const* argv[])
+int global_alias(int argc, char* argv[])
 {
     if(argc != 5)
     {
@@ -735,7 +730,7 @@ int global_alias(int argc, char const* argv[])
     free(lines);
     return 0;
 }
-int username_alias(int argc, char const* argv[])
+int username_alias(int argc, char* argv[])
 {
     char *cwd = (char *)malloc(2000);
     char *tmp_cwd = (char *)malloc(2000);
@@ -816,7 +811,7 @@ int username_alias(int argc, char const* argv[])
     }
     return 0;
 }
-int email_alias(int argc, char const* argv[])
+int email_alias(int argc, char* argv[])
 {
     char *cwd = (char *)malloc(2000);
     char *tmp_cwd = (char *)malloc(2000);
@@ -900,7 +895,7 @@ int email_alias(int argc, char const* argv[])
     }
     return 0;
 }
-int username_global_alias(int argc, char const* argv[])
+int username_global_alias(int argc, char* argv[])
 {
     char *address = "/home/asus/Documents/neogit";
     chdir(address);
@@ -982,7 +977,7 @@ int username_global_alias(int argc, char const* argv[])
     fclose(repo_list);
     return 0;
 }
-int email_global_alias(int argc, char const* argv[])
+int email_global_alias(int argc, char* argv[])
 {
     char *address = "/home/asus/Documents/neogit";
     chdir(address);
