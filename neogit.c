@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Invalid command: too few arguements\n");
         return 1;
     }
-    fprintf(stdout,"%d", argc);
 
     // char* current = (char*)malloc(2000);
     // getcwd(current, 2000);
@@ -200,7 +199,10 @@ int main(int argc, char* argv[])
             }
             for(int i = 2; i < argc; i++)
             {
-                return add(argv[2]);
+                chdir(source);
+                char command[MAX_ADDRESS_SIZE];
+                sprintf(command,"neogit add %s",argv[i]);
+                system(command);
             }
             return 0;
             
