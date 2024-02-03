@@ -15,186 +15,223 @@ FILE *repo_list;
 int run_init(int argc, char* argv[]);
 int config(int argc, char* argv[]);
 int global_config(int argc, char* argv[]);
-int alias(int argc, char* argv[]);
-int global_alias(int argc, char* argv[]);
-int username_alias(int argc, char* argv[]);
-int email_alias(int argc, char* argv[]);
-int username_global_alias(int argc, char* argv[]);
-int email_global_alias(int argc,char* argv[]);
+int add(char* argv);
+// int alias(int argc, char const* argv[]);
+// int global_alias(int argc, char const* argv[]);
+// int username_alias(int argc, char const* argv[]);
+// int email_alias(int argc, char const* argv[]);
+// int username_global_alias(int argc, char const* argv[]);
+// int email_global_alias(int argc,char const* argv[]);
 int main(int argc, char* argv[])
 {
+    char* source = (char*)malloc(MAX_ADDRESS_SIZE);
+    getcwd(source, MAX_ADDRESS_SIZE);
     if (argc < 2)
     {
         fprintf(stderr, "Invalid command: too few arguements\n");
         return 1;
     }
-    char* current = (char*)malloc(2000);
-    getcwd(current, 2000);
-    char* cwd = (char*)malloc(2000);
-    struct dirent* entry;
-    char* tmp_cwd = (char*)malloc(2000);
-    char* address = (char*)malloc(2000);
-    bool exists = false;
-    if(getcwd(cwd,2000) == NULL)
-    {
-        fprintf(stderr, "Error opeening current directory\n");
-        return 1;
-    }
-    do
-    {
-        DIR *dir = opendir(".");
-        if (dir == NULL)
-        {
-            fprintf(stderr, "Error occured\n");
-            return 1;
-        }
-        while ((entry = readdir(dir)) != NULL)
-        {
-            if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-            {
-                getcwd(address, 2000);
-                exists = true;
-                break;
-            }
-        }
-        if (exists)
-            break;
+    fprintf(stdout,"%d", argc);
 
-        if (getcwd(tmp_cwd, 2000) == NULL)
-        {
-            fprintf(stderr, "Error occured\n");
-            return 1;
-        }
-        if (strcmp(tmp_cwd, "/") != 0)
-        {
-            if (chdir("..") != 0)
-            {
-                fprintf(stderr, "Error occured\n");
-                return 1;
-            }
-        }
-    closedir(dir);
-    } while (strcmp(tmp_cwd, "/") != 0);
-    bool ok = false;
-    char* line = (char*)malloc(2000); 
-    if(exists && strcmp(argv[1], "init") == 0)
-    {
-        fprintf(stderr, "Repository has been initialized\n");
-        return 1;
-    }
-    else if(exists && strcmp(argv[1], "init") != 0)
-    {
-        strcat(address, "/.neogit");
-        chdir(address);
-        DIR* dir = opendir(".");
-        strcat(address, "/alias.txt");
-        FILE* file = fopen(address, "r");
-        char* command = (char*)malloc(2000);    //argv[1] might aliased command
-        while(fgets(line, 2000, file) != NULL) //line is from alias txt
-        {
-            if(strstr(line, argv[1]) != NULL) //command has been aliased locally and is saved in line
-            {
-                line = line + strlen(argv[1]) +2;
-                ok = true;
-                break;
-            }
-        }
-        if(!ok) //must search in globally alised commands
-        {
-            FILE* globe = fopen("/home/asus/Documents/neogit/alias_global.txt", "r");
-            if(globe == NULL)
-            {
-                fprintf(stderr, "Error in openning alias_global.txt\n");
-                return 1;
-            }
-            while(fgets(line, 2000, globe) != NULL)
-            {
-                if(strstr(line, argv[1]) != NULL)
-                {
-                    ok = true;
-                    line = line + strlen(argv[1]) + 2;
-                    break;
-                }
-            }
-            fclose(globe);
-        }
-        if(!ok)
-        {
-            fprintf(stderr, "Invalid command\n");
-            return 1;
-        }
-        fclose(file);
-        closedir(dir);
-    }
-    else if(!exists && strcmp(argv[1], "init") == 0)
-    {
-        return run_init(argc,argv);
-    }
-    else if(!exists && strcmp(argv[1],"init") != 0)
-    {
-        FILE* file = fopen("/home/asus/Documents/neogit/alias_global.txt", "r");
-        while(fgets(line, 2000, file)!= NULL)
-        {
-            if(strstr(line, argv[1]) != NULL)
-            {
-                line = line + strlen(argv[1]) + 2;
-                ok = true;
-                break;
-            }
-        }
-        if(!ok)
-        {
-            fprintf(stderr, "Invalid command\n");
-            return 1;
-        }
-        fclose(file);
-    }
+    // char* current = (char*)malloc(2000);
+    // getcwd(current, 2000);
+    // char* cwd = (char*)malloc(2000);
+    // struct dirent* entry;
+    // char* tmp_cwd = (char*)malloc(2000);
+    // char* address = (char*)malloc(2000);
+    // bool exists = false;
+    // if(getcwd(cwd,2000) == NULL)
+    // {
+    //     fprintf(stderr, "Error opeening current directory\n");
+    //     return 1;
+    // }
+    // do
+    // {
+    //     DIR *dir = opendir(".");
+    //     if (dir == NULL)
+    //     {
+    //         fprintf(stderr, "Error occured\n");
+    //         return 1;
+    //     }
+    //     while ((entry = readdir(dir)) != NULL)
+    //     {
+    //         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
+    //         {
+    //             getcwd(address, 2000);
+    //             exists = true;
+    //             break;
+    //         }
+    //     }
+    //     if (exists)
+    //         break;
+
+    //     if (getcwd(tmp_cwd, 2000) == NULL)
+    //     {
+    //         fprintf(stderr, "Error occured\n");
+    //         return 1;
+    //     }
+    //     if (strcmp(tmp_cwd, "/") != 0)
+    //     {
+    //         if (chdir("..") != 0)
+    //         {
+    //             fprintf(stderr, "Error occured\n");
+    //             return 1;
+    //         }
+    //     }
+    // closedir(dir);
+    // } while (strcmp(tmp_cwd, "/") != 0);
+    // bool ok = false;
+    // char* line = (char*)malloc(2000); 
+    // if(exists && strcmp(argv[1], "init") == 0)
+    // {
+    //     fprintf(stderr, "Repository has been initialized\n");
+    //     return 1;
+    // }
+    // else if(exists && strcmp(argv[1], "init") != 0)
+    // {
+    //     strcat(address, "/.neogit");
+    //     chdir(address);
+    //     DIR* dir = opendir(".");
+    //     strcat(address, "/alias.txt");
+    //     FILE* file = fopen(address, "r");
+    //     char* command = (char*)malloc(2000);    //argv[1] might aliased command
+    //     while(fgets(line, 2000, file) != NULL) //line is from alias txt
+    //     {
+    //         if(strstr(line, argv[1]) != NULL) //command has been aliased locally and is saved in line
+    //         {
+    //             line = line + strlen(argv[1]) +2;
+    //             ok = true;
+    //             break;
+    //         }
+    //     }
+    //     if(!ok) //must search in globally alised commands
+    //     {
+    //         FILE* globe = fopen("/home/asus/Documents/neogit/alias_global.txt", "r");
+    //         if(globe == NULL)
+    //         {
+    //             fprintf(stderr, "Error in openning alias_global.txt\n");
+    //             return 1;
+    //         }
+    //         while(fgets(line, 2000, globe) != NULL)
+    //         {
+    //             if(strstr(line, argv[1]) != NULL)
+    //             {
+    //                 ok = true;
+    //                 line = line + strlen(argv[1]) + 2;
+    //                 break;
+    //             }
+    //         }
+    //         fclose(globe);
+    //     }
+    //     if(!ok)
+    //     {
+    //         fprintf(stderr, "Invalid command\n");
+    //         return 1;
+    //     }
+    //     fclose(file);
+    //     closedir(dir);
+    // }
+    // else if(!exists && strcmp(argv[1], "init") == 0)
+    // {
+    //     return run_init(argc,argv);
+    // }
+    // else if(!exists && strcmp(argv[1],"init") != 0)
+    // {
+    //     FILE* file = fopen("/home/asus/Documents/neogit/alias_global.txt", "r");
+    //     while(fgets(line, 2000, file)!= NULL)
+    //     {
+    //         if(strstr(line, argv[1]) != NULL)
+    //         {
+    //             line = line + strlen(argv[1]) + 2;
+    //             ok = true;
+    //             break;
+    //         }
+    //     }
+    //     if(!ok)
+    //     {
+    //         fprintf(stderr, "Invalid command\n");
+    //         return 1;
+    //     }
+    //     fclose(file);
+    // }
     email = (char *)malloc(1000);
     username = (char *)malloc(1000);
-    chdir(current);
-    DIR* now = opendir(".");
+    // chdir(current);
+    // DIR* now = opendir(".");
     if (strcmp(argv[1], "init") == 0)
     {
         return run_init(argc, argv);
     }
     else if ((strcmp(argv[1], "config") == 0))
     {
-        if(strstr(argv[2], "alias.") != NULL)
+        if(argc > 2)
         {
-            return alias(argc,argv);
-        }
-        if(strcmp(argv[2], "--global") == 0 && strstr(argv[3], "alias.") == NULL)
+        // if(strstr(argv[2], "alias.") != NULL)
+        // {
+        //     return alias(argc,argv);
+        // }
+        
+        if(strcmp(argv[2], "--global") == 0 )//&& strstr(argv[3], "alias.") == NULL)
         {
             return global_config(argc, argv);
         }
-        if(strcmp(argv[2], "--global") == 0 && strstr(argv[3], "alias.") != NULL)
-        {
-            return global_alias(argc, argv);
         }
+        // if(strcmp(argv[2], "--global") == 0 && strstr(argv[3], "alias.") != NULL)
+        // {
+        //     return global_alias(argc, argv);
+        // }
         return config(argc, argv);
     }
-    else
+    else if((strcmp(argv[1], "add") == 0))
     {
-        int ln = strlen(line);
-        line[ln-1] = '\0';
-        if(ok)
+        if(argc > 3)
         {
-        if(strcmp(line,"init")== 0) return run_init(argc,argv);
-        else if(strcmp(line, "config user.name") == 0)
-        {         
-            return username_alias(argc,argv);
+            
+            int result;
+            if(strcmp(argv[2], "-f") == 0)
+            {
+                for(int i = 0; i < argc-3; i++){
+                    chdir(source);
+                    char command[MAX_ADDRESS_SIZE];
+                    sprintf(command,"neogit add %s",argv[i+3]);
+                    system(command);
+                }
+                return 0;
+            }
+            for(int i = 2; i < argc; i++)
+            {
+                return add(argv[2]);
+            }
+            return 0;
+            
         }
-        else if(strcmp(line, "config user.email") == 0) return email_alias(argc,argv);
-        else if(strcmp(line, "config --global user.name") == 0) return username_global_alias(argc,argv);
-        else if(strcmp(line, "config --global user.email") == 0) return email_global_alias(argc,argv);
-        // else if(strcmp(line, "config alias") == 0) return alias(argc,argv);
-        // else if(strcmp(line, "config --global alias") == 0) return global_alias(argc,argv);
-        // else if(strcmp(line, "add") == 0) return add_alias(argc,argv);
+        if(argc == 3)
+        {
 
+          return add(argv[2]);
         }
-        fprintf(stderr, "Invalid command\n");
     }
-    closedir(now);
+    
+    // else
+    // {
+    //     int ln = strlen(line);
+    //     line[ln-1] = '\0';
+    //     if(ok)
+    //     {
+    //     if(strcmp(line,"init")== 0) return run_init(argc,argv);
+    //     else if(strcmp(line, "config user.name") == 0)
+    //     {         
+    //         return username_alias(argc,argv);
+    //     }
+    //     else if(strcmp(line, "config user.email") == 0) return email_alias(argc,argv);
+    //     else if(strcmp(line, "config --global user.name") == 0) return username_global_alias(argc,argv);
+    //     else if(strcmp(line, "config --global user.email") == 0) return email_global_alias(argc,argv);
+    //     else if(strcmp(line, "config alias") == 0) return alias(argc,argv);
+    //     else if(strcmp(line, "config --global alias") == 0) return global_alias(argc,argv);
+    //     }
+    //     fprintf(stderr, "Invalid command\n");
+    // }
+    // closedir(now);
     return 0;
 }
 int run_init(int argc, char* argv[])
@@ -203,6 +240,11 @@ int run_init(int argc, char* argv[])
     char tmp_cwd[2000];
     bool exists = false;
     struct dirent *entry;
+    if(argc != 2)
+    {
+        fprintf(stderr, "Wrong number of arguemetns for init command\n");
+        return 1;
+    }
     if (getcwd(cwd, sizeof(cwd)) == NULL)
     {
         fprintf(stderr, "No current working directory in init\n");
@@ -247,68 +289,13 @@ int run_init(int argc, char* argv[])
         }
         strcat(cwd, "/.neogit");
         fprintf(repo_list, "%s\n", cwd);
-        // chdir(".neogit");
-        // DIR* repo = opendir(".");
-        // bool global_done = false;
-        // while((entry = readdir(repo)) != NULL)
-        // {
-        //     if(strcmp(entry->d_name, "global_config")==0 && entry->d_type == DT_DIR)
-        //     {
-        //         global_done = true;
-        //         break;
-        //     }
-        // }
-        // bool email_done = false;
-        // bool username_done = false;
-        // if(global_done)
-        // {
-        //     chdir("global_config");
-        //     repo = opendir(".");
-        //     while((entry = readdir(repo)) != NULL)
-        //     {
-        //         if(strcmp(entry->d_name, "global_name") == 0 && entry->d_type == DT_REG)
-        //         {
-        //             username_done = true;
-        //         }
-        //         if(strcmp(entry->d_name, "global_email") == 0 && entry->d_type == DT_REG)
-        //         {
-        //             email_done = true;
-        //         }
-        //     }
-        //     if(username_done && email_done)
-        //     {
-
-        //     }
-        //     else if(username && !email_done)
-        //     {
-
-        //     }
-        //     else if(!username_done && email_done)
-        //     {
-        //         fprintf(stderr, "Please config your username\n");
-        //         chdir(cwd);
-        //         DIR* a = opendir(".");
-        //         if(mkdir("config", 0755) != 0)
-        //         {
-        //             fprintf(stderr, "Error in setting global email\n");
-        //             return 1;
-        //         }
-        //         strcat(cwd, "config");
-        //         system(cp /home/asus/Documents/neogit/global_config/global_email cwd);
-        //     }
-        //     else if(!username_done && !email_done)
-        //     {
-        //         fprintf(stderr, "Please config your username and email\n");
-        //         return 1;
-        //     }
-
-        }
-        // closedir(repo);
+    }
     else
     {
         fprintf(stderr, "Repository has already been initialized\n");
         return 1;
     }
+
     return 0;
 }
 int config(int argc, char* argv[])
@@ -345,7 +332,7 @@ int config(int argc, char* argv[])
         {
             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
             {
-                getcwd(address, sizeof(address));
+                getcwd(address, 1000);
                 exists = true;
                 break;
             }
@@ -362,14 +349,12 @@ int config(int argc, char* argv[])
         {
             if (chdir("..") != 0)
             {
-                printf("4");
                 fprintf(stderr, "Error occured\n");
                 return 1;
             }
         }
     closedir(dir);
     } while (strcmp(tmp_cwd, "/") != 0);
-
     if (exists)
     {
         strcat(address, "/.neogit");
@@ -389,7 +374,6 @@ int config(int argc, char* argv[])
         {
             if (mkdir("config", 0755) != 0)
             {
-                printf("5");
                 fprintf(stderr, "Error occured in config\n");
                 return 1;
             }   
@@ -424,6 +408,7 @@ int config(int argc, char* argv[])
             }
             strcpy(email, argv[3]);
             fprintf(user, "%s\n", email);
+            fprintf(stdout, "Email has been successfuly registered locally\n");
             fclose(user);
         }
         else
@@ -439,9 +424,9 @@ int config(int argc, char* argv[])
         fprintf(stderr, "Repository hasn't been initialized\n");
         return 1;
     }
-    free(cwd);
-    free(tmp_cwd);
-    free(address);
+    // free(cwd);
+    // free(tmp_cwd);
+    // free(address);
     return 0;
 }
 int global_config(int argc, char* argv[])
@@ -560,499 +545,613 @@ int global_config(int argc, char* argv[])
         }
         closedir(dir);
    }
-    free(repo);
+    // free(repo);
     fclose(repo_list);
     return 0;
 }
-int alias(int argc, char* argv[])
-{
-    if(argc != 4)
-    {
-        fprintf(stderr, "Wrong number of arguements\n");
-        return 1;
-    }
-    struct dirent* entry;
-    bool exists = false;
-    char* cwd = (char*)malloc(2000);
-    char* tmp_cwd = (char*)malloc(2000);
-    if(getcwd(cwd, 2000) == NULL)
-    {
-        fprintf(stderr, "Error occured in alias\n");
-        return 1;
-    }
-    char* add = (char*)malloc(2000);
-    getcwd(add, 2000);
-    do
-    {
-        DIR *dir = opendir(".");
-        getcwd(add, 2000);
-        if (dir == NULL)
-        {
-            fprintf(stderr, "Error openning directory in init\n");
-            return 1;
-        }
-        while ((entry = readdir(dir)) != NULL)
-        {
-            if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-            {
-                exists = true;
-                break;
-            }
-        if (getcwd(tmp_cwd, 2000) == NULL)
-                return 1;
+// int alias(int argc, char const* argv[])
+// {
+//     if(argc != 4)
+//     {
+//         fprintf(stderr, "Wrong number of arguements\n");
+//         return 1;
+//     }
+//     struct dirent* entry;
+//     bool exists = false;
+//     char* cwd = (char*)malloc(2000);
+//     char* tmp_cwd = (char*)malloc(2000);
+//     if(getcwd(cwd, 2000) == NULL)
+//     {
+//         fprintf(stderr, "Error occured in alias\n");
+//         return 1;
+//     }
+//     char* add = (char*)malloc(2000);
+//     getcwd(add, 2000);
+//     do// int alias(int argc, char const* argv[])
+// {
+//     if(argc != 4)
+//     {
+//         fprintf(stderr, "Wrong number of arguements\n");
+//         return 1;
+//     }
+//     struct dirent* entry;
+//     bool exists = false;
+//     char* cwd = (char*)malloc(2000);
+//     char* tmp_cwd = (char*)malloc(2000);
+//     if(getcwd(cwd, 2000) == NULL)
+//     {
+//         fprintf(stderr, "Error occured in alias\n");
+//         return 1;
+//     }
+//     char* add = (char*)malloc(2000);
+//     getcwd(add, 2000);
+//     do
+//     {
+//         DIR *dir = opendir(".");
+//         getcwd(add, 2000);
+//         if (dir == NULL)
+//         {
+//             fprintf(stderr, "Error openning directory in init\n");
+//             return 1;
+//         }
+//         while ((entry = readdir(dir)) != NULL)
+//         {
+//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
+//             {
+//                 exists = true;
+//                 break;
+//             }
+//         if (getcwd(tmp_cwd, 2000) == NULL)
+//                 return 1;
 
-            if (strcmp(tmp_cwd, "/") != 0)
-            {
-                if (chdir("..") != 0)
-                    return 1;
-            }
-        }
-        if(exists)
-        {
-            break;
-        }
-        closedir(dir);
+//             if (strcmp(tmp_cwd, "/") != 0)
+//             {
+//                 if (chdir("..") != 0)
+//                     return 1;
+//             }
+//         }
+//         if(exists)
+//         {
+//             break;
+//         }
+//         closedir(dir);
 
-    } while (strcmp(tmp_cwd, "/") != 0);
-    if(exists)
-    {
-        strcat(add, "/.neogit");
-        chdir(add);
-    DIR* dir = opendir(".");
-    getcwd(add, sizeof(add));
-    if(dir == NULL)
-    {
-        fprintf(stderr, "Error occured in alias\n");
-        return 1;
-    }
-    strcat(add, "/alias.txt");
-    FILE *alias_file = fopen(add, "a");
-    if(alias_file == NULL)
-    {
-        fprintf(stderr, "Error occured in openning alias.txt\n");
-        return 1;
-    }
-    char* name = (char*)malloc(1000);
-    sscanf(argv[2], "alias.%s", name);
-    // printf("name is %s\n", name);
-    char* command = (char*)malloc(2000);
-    strcpy(command, argv[3]);
-    command = command + strlen("neogit") + 1;
-    // printf("command is %s\n", command);
-    char* tmp = (char*)malloc(2000);
-    FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
-    if(commands == NULL)
-    {
-        fprintf(stderr, "Error occured in opeening commands file\n");
-        return 1;
-    }
-    bool ok= false;
-    while(fgets(tmp, 2000, commands) != NULL)
-    {
-        int ln = strlen(tmp);
-        tmp[ln -1] = '\0';
-        if(strcmp(command, tmp) == 0)
-        {
-            ok = true;
-            break;
-        }
-    }
-    if(ok)
-    {
-        fprintf(alias_file, "%s  %s\n", name, command);
-    }
-    else{
-        fprintf(stderr, "Given command isn't a neogit command\n");
-        return 1;
-    }
-    closedir(dir);
-    fclose(commands);
-    fclose(alias_file);
-    free(tmp);
-    free(name);
-    }
-    else{
-        fprintf(stderr, "The repository has not been initialized\n");
-        return 1;
-    }
-    free(cwd);
-    free(tmp_cwd);
-    return 0;
-}
-int global_alias(int argc, char* argv[])
-{
-    if(argc != 5)
-    {
-        fprintf(stderr, "Wrong number of arguements in alias global\n");
-        return 0;
-    }
-    FILE *global = fopen("/home/asus/Documents/neogit/alias_global.txt", "a");
-    if(global == NULL)
-    {
-        fprintf(stderr, "Error in global alias\n");
-        return 1;
-    }
-    char* lines = (char*)malloc(2000);
-    FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
-    if(commands == NULL)
-    {
-        fprintf(stderr, "Error in global alias\n");
-        return 1;
-    }
-    char* name = (char*)malloc(2000);
-    char* command = (char*)malloc(2000);
-    sscanf(argv[3], "alias.%s", name);
-    strcpy(command, argv[4]);
-    command = command + strlen("neogit") + 1;
-    bool exist = false;
-    while(fgets(lines, 1000, commands) != NULL)
-    {
-        int ln = strlen(lines);
-        lines[ln - 1] = '\0';
-        if(strcmp(command, lines) == 0)
-        {
-            exist = true;
-            break;
-        }
-    }
-    char* address = (char*)malloc(2000);
-    if(exist)
-    {
-        fprintf(global, "%s  %s\n", name, command);
-    }
-    else{
-        fprintf(stderr, "The given command in not a neogit command\n");
-        return 1;
-    }
+//     } while (strcmp(tmp_cwd, "/") != 0);
+//     if(exists)
+//     {
+//         strcat(add, "/.neogit");
+//         chdir(add);
+//     DIR* dir = opendir(".");
+//     getcwd(add, sizeof(add));
+//     if(dir == NULL)
+//     {
+//         fprintf(stderr, "Error occured in alias\n");
+//         return 1;
+//     }
+//     strcat(add, "/alias.txt");
+//     FILE *alias_file = fopen(add, "a");
+//     if(alias_file == NULL)
+//     
+//         fprintf(stderr, "Error occured in openning alias.txt\n");
+//         return 1;
+//     }
+//     char* name = (char*)malloc(1000);
+//     sscanf(argv[2], "alias.%s", name);
+//     // printf("name is %s\n", name);
+//     char* command = (char*)malloc(2000);
+//     strcpy(command, argv[3]);
+//     command = command + strlen("neogit") + 1;
+//     // printf("command is %s\n", command);
+//     char* tmp = (char*)malloc(2000);
+//     FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
+//     if(commands == NULL)
+//     {
+//         fprintf(stderr, "Error occured in opeening commands file\n");
+//         return 1;
+//     }
+//     bool ok= false;
+//     while(fgets(tmp, 2000, commands) != NULL)
+//     {
+//         int ln = strlen(tmp);
+//         tmp[ln -1] = '\0';
+//         if(strcmp(command, tmp) == 0)
+//         {
+//             ok = true;
+//             break;
+//         }
+//     }
+//     if(ok)
+//     {
+//         fprintf(alias_file, "%s  %s\n", name, command);
+//     }
+//     else{
+//         fprintf(stderr, "Given command isn't a neogit command\n");
+//         return 1;
+//     }
+//     closedir(dir);
+//     fclose(commands);
+//     fclose(alias_file);
+//     free(tmp);
+//     free(name);
+//     }
+//     else{
+//         fprintf(stderr, "The repository has not been initialized\n");
+//         return 1;
+//     }
+//     free(cwd);
+//     free(tmp_cwd);
+//     return 0;
+// }
+//     {
+//         DIR *dir = opendir(".");
+//         getcwd(add, 2000);
+//         if (dir == NULL)
+//         {
+//             fprintf(stderr, "Error openning directory in init\n");
+//             return 1;
+//         }
+//         while ((entry = readdir(dir)) != NULL)
+//         {
+//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
+//             {
+//                 exists = true;
+//                 break;
+//             }
+//         if (getcwd(tmp_cwd, 2000) == NULL)
+//                 return 1;
 
-    fclose(global);
-    fclose(commands);
-    free(lines);
-    return 0;
-}
-int username_alias(int argc, char* argv[])
-{
-    char *cwd = (char *)malloc(2000);
-    char *tmp_cwd = (char *)malloc(2000);
-    char *address = (char *)malloc(2000);
-    struct dirent *entry;
-    bool exists = 0;
-    if (getcwd(cwd, 2000) == NULL)
-    {
-        fprintf(stderr, "Error in configuration\n");
-        return 1;
-    }
-    do
-    {
-        DIR *dir = opendir(".");
-        if (dir == NULL)
-        {
-            fprintf(stderr, "Error occured\n");
-            return 1;
-        }
-        while ((entry = readdir(dir)) != NULL)
-        {
-            if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-            {
-                getcwd(address, 2000);
-                exists = true;
-                break;
-            }
-        }
-        if (exists)
-            break;
+//             if (strcmp(tmp_cwd, "/") != 0)
+//             {
+//                 if (chdir("..") != 0)
+//                     return 1;
+//             }
+//         }
+//         if(exists)
+//         {
+//             break;
+//         }
+//         closedir(dir);
 
-        if (getcwd(tmp_cwd, 2000) == NULL)
-        {
-            fprintf(stderr, "Error occured\n");
-            return 1;
-        }
-        if (strcmp(tmp_cwd, "/") != 0)
-        {
-            if (chdir("..") != 0)
-            {
-                fprintf(stderr, "Error occured\n");
-                return 1;
-            }
-        }
-    closedir(dir);
-    } while (strcmp(tmp_cwd, "/") != 0);
-    if (exists)
-    {
-        strcat(address, "/.neogit");
-        chdir(address);
-        DIR* dir = opendir(".");
-        bool found = false;
-        while((entry = readdir(dir)) != NULL)
-        {
-            if((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "config") == 0))
-            {
-                found = true;
-                break;
-            }
-        }
-        if(!found)
-        {
-            if (mkdir("config", 0755) != 0)
-            {
-                fprintf(stderr, "Error occured in config\n");
-                return 1;
-            }   
-        }
-        strcat(address, "/config");
-        chdir(address);
-        closedir(dir);
-        dir = opendir(".");
-        strcat(address, "/username");
-        FILE* file = fopen(address, "w");
-        fprintf(file, "%s", argv[2]);
-        fclose(file);
-        closedir(dir);
-    }
-    return 0;
-}
-int email_alias(int argc, char* argv[])
-{
-    char *cwd = (char *)malloc(2000);
-    char *tmp_cwd = (char *)malloc(2000);
-    char *address = (char *)malloc(2000);
-    struct dirent *entry;
-    bool exists = 0;
-    if (getcwd(cwd, 2000) == NULL)
-    {
-        fprintf(stderr, "Error in configuration\n");
-        return 1;
-    }
-    do
-    {
-        DIR *dir = opendir(".");
-        if (dir == NULL)
-        {
-            fprintf(stderr, "Error occured\n");
-            return 1;
-        }
-        while ((entry = readdir(dir)) != NULL)
-        {
-            if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-            {
-                getcwd(address, 2000);
-                exists = true;
-                break;
-            }
-        }
-        if (exists)
-            break;
+//     } while (strcmp(tmp_cwd, "/") != 0);
+//     if(exists)
+//     {
+//         strcat(add, "/.neogit");
+//         chdir(add);
+//     DIR* dir = opendir(".");
+//     getcwd(add, sizeof(add));
+//     if(dir == NULL)
+//     {
+//         fprintf(stderr, "Error occured in alias\n");
+//         return 1;
+//     }
+//     strcat(add, "/alias.txt");
+//     FILE *alias_file = fopen(add, "a");
+//     if(alias_file == NULL)
+//     
+//         fprintf(stderr, "Error occured in openning alias.txt\n");
+//         return 1;
+//     }
+//     char* name = (char*)malloc(1000);
+//     sscanf(argv[2], "alias.%s", name);
+//     // printf("name is %s\n", name);
+//     char* command = (char*)malloc(2000);
+//     strcpy(command, argv[3]);
+//     command = command + strlen("neogit") + 1;
+//     // printf("command is %s\n", command);
+//     char* tmp = (char*)malloc(2000);
+//     FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
+//     if(commands == NULL)
+//     {
+//         fprintf(stderr, "Error occured in opeening commands file\n");
+//         return 1;
+//     }
+//     bool ok= false;
+//     while(fgets(tmp, 2000, commands) != NULL)
+//     {
+//         int ln = strlen(tmp);
+//         tmp[ln -1] = '\0';
+//         if(strcmp(command, tmp) == 0)
+//         {
+//             ok = true;
+//             break;
+//         }
+//     }
+//     if(ok)
+//     {
+//         fprintf(alias_file, "%s  %s\n", name, command);
+//     }
+//     else{
+//         fprintf(stderr, "Given command isn't a neogit command\n");
+//         return 1;
+//     }
+//     closedir(dir);
+//     fclose(commands);
+//     fclose(alias_file);
+//     free(tmp);
+//     free(name);
+//     }
+//     else{
+//         fprintf(stderr, "The repository has not been initialized\n");
+//         return 1;
+//     }
+//     free(cwd);
+//     free(tmp_cwd);
+//     return 0;
+// }
+// int global_alias(int argc, char const* argv[])
+// {
+//     if(argc != 5)
+//     {
+//         fprintf(stderr, "Wrong number of arguements in alias global\n");
+//         return 0;
+//     }
+//     FILE *global = fopen("/home/asus/Documents/neogit/alias_global.txt", "a");
+//     if(global == NULL)
+//     {
+//         fprintf(stderr, "Error in global alias\n");
+//         return 1;
+//     }
+//     char* lines = (char*)malloc(2000);
+//     FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
+//     if(commands == NULL)
+//     {
+//         fprintf(stderr, "Error in global alias\n");
+//         return 1;
+//     }
+//     char* name = (char*)malloc(2000);
+//     char* command = (char*)malloc(2000);
+//     sscanf(argv[3], "alias.%s", name);
+//     strcpy(command, argv[4]);
+//     command = command + strlen("neogit") + 1;
+//     bool exist = false;
+//     while(fgets(lines, 1000, commands) != NULL)
+//     {
+//         int ln = strlen(lines);
+//         lines[ln - 1] = '\0';
+//         if(strcmp(command, lines) == 0)
+//         {
+//             exist = true;
+//             break;
+//         }
+//     }
+//     char* address = (char*)malloc(2000);
+//     if(exist)
+//     {
+//         fprintf(global, "%s  %s\n", name, command);
+//     }
+//     else{
+//         fprintf(stderr, "The given command in not a neogit command\n");
+//         return 1;
+//     }
 
-        if (getcwd(tmp_cwd, 2000) == NULL)
-        {
-            fprintf(stderr, "Error occured\n");
-            return 1;
-        }
-        if (strcmp(tmp_cwd, "/") != 0)
-        {
-            if (chdir("..") != 0)
-            {
-                printf("4");
-                fprintf(stderr, "Error occured\n");
-                return 1;
-            }
-        }
-    closedir(dir);
-    } while (strcmp(tmp_cwd, "/") != 0);
+//     fclose(global);
+//     fclose(commands);
+//     free(lines);
+//     return 0;
+// }
+// int username_alias(int argc, char const* argv[])
+// {
+//     char *cwd = (char *)malloc(2000);
+//     char *tmp_cwd = (char *)malloc(2000);
+//     char *address = (char *)malloc(2000);
+//     struct dirent *entry;
+//     bool exists = 0;
+//     if (getcwd(cwd, 2000) == NULL)
+//     {
+//         fprintf(stderr, "Error in configuration\n");
+//         return 1;
+//     }
+//     do
+//     {
+//         DIR *dir = opendir(".");
+//         if (dir == NULL)
+//         {
+//             fprintf(stderr, "Error occured\n");
+//             return 1;
+//         }
+//         while ((entry = readdir(dir)) != NULL)
+//         {
+//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
+//             {
+//                 getcwd(address, 2000);
+//                 exists = true;
+//                 break;
+//             }
+//         }
+//         if (exists)
+//             break;
 
-    if (exists)
-    {
-        strcat(address, "/.neogit");
-        chdir(address);
-        DIR* dir = opendir(".");
-        bool found = false;
-        while((entry = readdir(dir)) != NULL)
-        {
-            if((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "config") == 0))
-            {
-                found = true;
-                break;
+//         if (getcwd(tmp_cwd, 2000) == NULL)
+//         {
+//             fprintf(stderr, "Error occured\n");
+//             return 1;
+//         }
+//         if (strcmp(tmp_cwd, "/") != 0)
+//         {
+//             if (chdir("..") != 0)
+//             {
+//                 fprintf(stderr, "Error occured\n");
+//                 return 1;
+//             }
+//         }
+//     closedir(dir);
+//     } while (strcmp(tmp_cwd, "/") != 0);
+//     if (exists)
+//     {
+//         strcat(address, "/.neogit");
+//         chdir(address);
+//         DIR* dir = opendir(".");
+//         bool found = false;
+//         while((entry = readdir(dir)) != NULL)
+//         {
+//             if((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "config") == 0))
+//             {
+//                 found = true;
+//                 break;
+//             }
+//         }
+//         if(!found)
+//         {
+//             if (mkdir("config", 0755) != 0)
+//             {
+//                 fprintf(stderr, "Error occured in config\n");
+//                 return 1;
+//             }   
+//         }
+//         strcat(address, "/config");
+//         chdir(address);
+//         closedir(dir);
+//         dir = opendir(".");
+//         strcat(address, "/username");
+//         FILE* file = fopen(address, "w");
+//         fprintf(file, "%s", argv[2]);
+//         fclose(file);
+//         closedir(dir);
+//     }
+//     return 0;
+// }
+// int email_alias(int argc, char const* argv[])
+// {
+//     char *cwd = (char *)malloc(2000);
+//     char *tmp_cwd = (char *)malloc(2000);
+//     char *address = (char *)malloc(2000);
+//     struct dirent *entry;
+//     bool exists = 0;
+//     if (getcwd(cwd, 2000) == NULL)
+//     {
+//         fprintf(stderr, "Error in configuration\n");
+//         return 1;
+//     }
+//     do
+//     {
+//         DIR *dir = opendir(".");
+//         if (dir == NULL)
+//         {
+//             fprintf(stderr, "Error occured\n");
+//             return 1;
+//         }
+//         while ((entry = readdir(dir)) != NULL)
+//         {
+//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
+//             {
+//                 getcwd(address, 2000);
+//                 exists = true;
+//                 break;
+//             }
+//         }
+//         if (exists)
+//             break;
 
-            }
-        }
-        if(!found)
-        {
-            if (mkdir("config", 0755) != 0)
-            {
-                fprintf(stderr, "Error occured in config\n");
-                return 1;
-            }   
-        }
-        strcat(address, "/config");
-        chdir(address);
-        closedir(dir);
-        dir = opendir(".");
-        strcat(address, "/useremail");
-        FILE* file = fopen(address, "w");
-        fprintf(file, "%s", argv[2]);
-        fclose(file);
-        closedir(dir);
-    }
-    return 0;
-}
-int username_global_alias(int argc, char* argv[])
-{
-    char *address = "/home/asus/Documents/neogit";
-    chdir(address);
-    DIR *dir = opendir(".");
-    if(dir == NULL)
-    {
-        fprintf(stderr, "Error in openning neogit directory\n");
-        return 1;
-    }
-    struct dirent *entry;
-    bool exists = false;
-    char *cwd = (char *)malloc(2000);
-    repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
-    char* repo = (char*)malloc(2000);
-    while ((entry = readdir(dir)) != NULL)
-    {
-        if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
-        {
-            if (getcwd(cwd, 2000) == NULL)
-            {
-                fprintf(stderr, "Error in global configuration\n");
-                return 1;
-            }
-            exists = true;
-            break;
-        }
-    }
-    if (!exists)
-    {
-        if (mkdir("global_config", 0755) != 0)
-        {
-            fprintf(stderr, "Error in global configuration\n");
-            return 1;
-        }
-    }
-    strcat(cwd, "/global_config");
-    chdir(cwd);
-    dir = opendir(".");
-        strcat(cwd, "/global_name");
-        FILE *file = fopen(cwd, "w");
-        fprintf(file, "%s\n", argv[2]);
-        fclose(file);
+//         if (getcwd(tmp_cwd, 2000) == NULL)
+//         {
+//             fprintf(stderr, "Error occured\n");
+//             return 1;
+//         }
+//         if (strcmp(tmp_cwd, "/") != 0)
+//         {
+//             if (chdir("..") != 0)
+//             {
+//                 printf("4");
+//                 fprintf(stderr, "Error occured\n");
+//                 return 1;
+//             }
+//         }
+//     closedir(dir);
+//     } while (strcmp(tmp_cwd, "/") != 0);
 
-    closedir(dir);
-   while(fgets(repo, 1000, repo_list) != NULL)
-   {
-        int length = strlen(repo);
-        repo[length - 1] = '\0';
-        chdir(repo);
-        DIR* repos = opendir(".");
-        struct dirent *direct;
-        bool found = false;
-        while((direct = readdir(repos)) != NULL)
-        {
-            if(direct->d_type == DT_DIR && (strcmp(direct->d_name, "config") == 0))
-            {
-                found = true;
-                break;
-            }
-        }
-        if(!found)
-        {
-            if(mkdir("config", 0755) != 0)
-            {
-                fprintf(stderr, "Error in global config\n");
-                return 1;
-            }
-        }
-        strcat(repo,"/config");
-        chdir(repo);
-        DIR* dir = opendir(".");
-            strcat(repo, "/username");
-            FILE* file = fopen(repo, "w");
-            fprintf(file, "%s\n", argv[2]);
-            fclose(file);   
-        closedir(dir);
-   }
-    free(repo);
-    fclose(repo_list);
-    return 0;
-}
-int email_global_alias(int argc, char* argv[])
-{
-    char *address = "/home/asus/Documents/neogit";
-    chdir(address);
-    DIR *dir = opendir(".");
-    struct dirent *entry;
-    bool exists = false;
-    char *cwd = (char *)malloc(2000);
-    repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
-    char* repo = (char*)malloc(2000);
-    while ((entry = readdir(dir)) != NULL)
-    {
-        if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
-        {
-            if (getcwd(cwd, 2000) == NULL)
-            {
-                fprintf(stderr, "Error in global configuration\n");
-                return 1;
-            }
-            exists = true;
-            break;
-        }
-    }
-    if (!exists)
-    {
-        if (mkdir("global_config", 0755) != 0)
-        {
-            fprintf(stderr, "Error in global configuration\n");
-            return 1;
-        }
-    }
-    closedir(dir);
-    strcat(cwd, "/global_config");
-    chdir(cwd);
-    dir = opendir(".");
-        strcat(cwd, "/global_email");
-        FILE *file = fopen(cwd, "w");
-        fprintf(file, "%s\n", argv[2]);
-        fclose(file);
+//     if (exists)
+//     {
+//         strcat(address, "/.neogit");
+//         chdir(address);
+//         DIR* dir = opendir(".");
+//         bool found = false;
+//         while((entry = readdir(dir)) != NULL)
+//         {
+//             if((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "config") == 0))
+//             {
+//                 found = true;
+//                 break;
 
-    closedir(dir);
-   while(fgets(repo, 1000, repo_list) != NULL)
-   {
-        int length = strlen(repo);
-        repo[length - 1] = '\0';
-        chdir(repo);
-        DIR* repos = opendir(".");
-        struct dirent *direct;
-        bool found = false;
-        while((direct = readdir(repos)) != NULL)
-        {
-            if(direct->d_type == DT_DIR && (strcmp(direct->d_name, "config") == 0))
-            {
-                found = true;
-                break;
-            }
-        }
-        if(!found)
-        {
-            if(mkdir("config", 0755) != 0)
-            {
-                fprintf(stderr, "Error in global config\n");
-                return 1;
-            }
-        }
-        strcat(repo,"/config");
-        chdir(repo);
-        DIR* dir = opendir(".");
-            strcat(repo, "/useremail");
-            FILE* file = fopen(repo, "w");
-            fprintf(file, "%s\n", argv[2]);
-            fclose(file);   
-        closedir(dir);
-   }
-    free(repo);
-    fclose(repo_list);
-    return 0;
-}
+//             }
+//         }
+//         if(!found)
+//         {
+//             if (mkdir("config", 0755) != 0)
+//             {
+//                 fprintf(stderr, "Error occured in config\n");
+//                 return 1;
+//             }   
+//         }
+//         strcat(address, "/config");
+//         chdir(address);
+//         closedir(dir);
+//         dir = opendir(".");
+//         strcat(address, "/useremail");
+//         FILE* file = fopen(address, "w");
+//         fprintf(file, "%s", argv[2]);
+//         fclose(file);
+//         closedir(dir);
+//     }
+//     return 0;
+//}
+// int username_global_alias(int argc, char const* argv[])
+// {
+//     char *address = "/home/asus/Documents/neogit";
+//     chdir(address);
+//     DIR *dir = opendir(".");
+//     if(dir == NULL)
+//     {
+//         fprintf(stderr, "Error in openning neogit directory\n");
+//         return 1;
+//     }
+//     struct dirent *entry;
+//     bool exists = false;
+//     char *cwd = (char *)malloc(2000);
+//     repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
+//     char* repo = (char*)malloc(2000);
+//     while ((entry = readdir(dir)) != NULL)
+//     {
+//         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
+//         {
+//             if (getcwd(cwd, 2000) == NULL)
+//             {
+//                 fprintf(stderr, "Error in global configuration\n");
+//                 return 1;
+//             }
+//             exists = true;
+//             break;
+//         }
+//     }
+//     if (!exists)
+//     {
+//         if (mkdir("global_config", 0755) != 0)
+//         {
+//             fprintf(stderr, "Error in global configuration\n");
+//             return 1;
+//         }
+//     }
+//     strcat(cwd, "/global_config");
+//     chdir(cwd);
+//     dir = opendir(".");
+//         strcat(cwd, "/global_name");
+//         FILE *file = fopen(cwd, "w");
+//         fprintf(file, "%s\n", argv[2]);
+//         fclose(file);
+
+//     closedir(dir);
+//    while(fgets(repo, 1000, repo_list) != NULL)
+//    {
+//         int length = strlen(repo);
+//         repo[length - 1] = '\0';
+//         chdir(repo);
+//         DIR* repos = opendir(".");
+//         struct dirent *direct;
+//         bool found = false;
+//         while((direct = readdir(repos)) != NULL)
+//         {
+//             if(direct->d_type == DT_DIR && (strcmp(direct->d_name, "config") == 0))
+//             {
+//                 found = true;
+//                 break;
+//             }
+//         }
+//         if(!found)
+//         {
+//             if(mkdir("config", 0755) != 0)
+//             {
+//                 fprintf(stderr, "Error in global config\n");
+//                 return 1;
+//             }
+//         }
+//         strcat(repo,"/config");
+//         chdir(repo);
+//         DIR* dir = opendir(".");
+//             strcat(repo, "/username");
+//             FILE* file = fopen(repo, "w");
+//             fprintf(file, "%s\n", argv[2]);
+//             fclose(file);   
+//         closedir(dir);
+//    }
+//     free(repo);
+//     fclose(repo_list);
+//     return 0;
+// }
+// int email_global_alias(int argc, char const* argv[])
+// {
+//     char *address = "/home/asus/Documents/neogit";
+//     chdir(address);
+//     DIR *dir = opendir(".");
+//     struct dirent *entry;
+//     bool exists = false;
+//     char *cwd = (char *)malloc(2000);
+//     repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
+//     char* repo = (char*)malloc(2000);
+//     while ((entry = readdir(dir)) != NULL)
+//     {
+//         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
+//         {
+//             if (getcwd(cwd, 2000) == NULL)
+//             {
+//                 fprintf(stderr, "Error in global configuration\n");
+//                 return 1;
+//             }
+//             exists = true;
+//             break;
+//         }
+//     }
+//     if (!exists)
+//     {
+//         if (mkdir("global_config", 0755) != 0)
+//         {
+//             fprintf(stderr, "Error in global configuration\n");
+//             return 1;
+//         }
+//     }
+//     closedir(dir);
+//     strcat(cwd, "/global_config");
+//     chdir(cwd);
+//     dir = opendir(".");
+//         strcat(cwd, "/global_email");
+//         FILE *file = fopen(cwd, "w");
+//         fprintf(file, "%s\n", argv[2]);
+//         fclose(file);
+
+//     closedir(dir);
+//    while(fgets(repo, 1000, repo_list) != NULL)
+//    {
+//         int length = strlen(repo);
+//         repo[length - 1] = '\0';
+//         chdir(repo);
+//         DIR* repos = opendir(".");
+//         struct dirent *direct;
+//         bool found = false;
+//         while((direct = readdir(repos)) != NULL)
+//         {
+//             if(direct->d_type == DT_DIR && (strcmp(direct->d_name, "config") == 0))
+//             {
+//                 found = true;
+//                 break;
+//             }
+//         }
+//         if(!found)
+//         {
+//             if(mkdir("config", 0755) != 0)
+//             {
+//                 fprintf(stderr, "Error in global config\n");
+//                 return 1;
+//             }
+//         }
+//         strcat(repo,"/config");
+//         chdir(repo);
+//         DIR* dir = opendir(".");
+//             strcat(repo, "/useremail");
+//             FILE* file = fopen(repo, "w");
+//             fprintf(file, "%s\n", argv[2]);
+//             fclose(file);   
+//         closedir(dir);
+//    }
+//     free(repo);
+//     fclose(repo_list);
+//     return 0;
+// }
                 
