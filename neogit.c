@@ -8,14 +8,15 @@
 #include <sys/types.h>
 #include<time.h>
 #include "add.c"
+// #include "reset.c"
 char *username;
 char *email;
 FILE *repo_list;
-
 int run_init(int argc, char* argv[]);
 int config(int argc, char* argv[]);
 int global_config(int argc, char* argv[]);
 int add(char* argv);
+// int reset(char* argc);
 // int alias(int argc, char const* argv[]);
 // int global_alias(int argc, char const* argv[]);
 // int username_alias(int argc, char const* argv[]);
@@ -31,7 +32,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Invalid command: too few arguements\n");
         return 1;
     }
-
     // char* current = (char*)malloc(2000);
     // getcwd(current, 2000);
     // char* cwd = (char*)malloc(2000);
@@ -183,6 +183,11 @@ int main(int argc, char* argv[])
     }
     else if((strcmp(argv[1], "add") == 0))
     {
+        if(argc < 3)
+        {
+            fprintf(stderr, "Wrong number of arguements for add\n");
+            return 1;
+        }
         if(argc > 3)
         {
             

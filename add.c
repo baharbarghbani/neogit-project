@@ -79,10 +79,9 @@ void repo_check()
 int add_dir(char* src, char* dest)
 {
     DIR* dir = opendir(src);
-    text = fopen(stage_txt, "a");
     if(text == NULL)
     {
-        fprintf(stderr, "Error in openning stage lis\n");
+        fprintf(stderr, "Error in openning stage list\n");
         return 1;
     }
     if(dir == NULL)
@@ -92,11 +91,6 @@ int add_dir(char* src, char* dest)
     }
     sprintf(command,"mkdir -p %s", dest);
     system(command);
-    // if(mkdir(dest, 0755) != 0)
-    // {
-    //     fprintf(stderr, "Error making directory\n");
-    //     return 1;
-    // }
     while((entry = readdir(dir))!= NULL)
     {
         char* new_src = (char*)malloc(MAX_ADDRESS_SIZE);
@@ -113,18 +107,53 @@ int add_dir(char* src, char* dest)
             {
                 continue;
             }
-            fprintf(text, "%s  %s\n",new_src, entry->d_name);
+            text = fopen(stage_txt, "r");
+            bool repeat = false;
+            while(fgets(line, 1000, text) != NULL)
+            {
+                if(strncmp(line, new_src, strlen(new_src)) == 0)
+                {
+                    repeat = true;
+                    break;
+                }
+            }
+            rewind(text);
+            fclose(text);
+            if(!repeat)
+            {
+                text = fopen(stage_txt, "a");
+                fprintf(text, "%s  %s\n", new_src, entry->d_name);
+                fclose(text);
+                
+
+            }
             if(add_dir(new_src,new_des) != 0)
             {
                 
                 fprintf(stderr, "Error occured in recursive\n");
                 continue;
             }
-            line_count++;
         }
         else{
-            line_count++;
-            fprintf(text, "%s  %s\n",new_src, entry->d_name);
+            text = fopen(stage_txt, "r");
+            bool repeat = false;
+            while(fgets(line, 1000, text) != NULL)
+            {
+                if(strncmp(line, new_src, strlen(new_src))== 0)
+                {
+                    repeat = true;
+                    break;
+                }
+            }
+            rewind(text);
+            fclose(text);
+
+            if(!repeat)
+            {   
+                text = fopen(stage_txt, "a");
+                fprintf(text, "%s  %s\n", new_src, entry->d_name);
+                fclose(text);
+            }
             sprintf(command, "cp %s %s", new_src, new_des);
             system(command);
         }
@@ -374,9 +403,6 @@ if(is_directory)
     fclose(text);
     char* in_stage_path = (char*)malloc(MAX_ADDRESS_SIZE);
     sprintf(in_stage_path, "%s/%s", stage_path, str);
-    text = fopen(stage_txt, "a");
-    fprintf(text, "%s  %s\n", path, name[word_count]);
-    fclose(text);
     int result;
     if(repeated)
     {
@@ -390,6 +416,9 @@ if(is_directory)
         }
     }
     else{
+        text = fopen(stage_txt, "a");
+        fprintf(text, "%s  %s\n", path, name[word_count]);
+        fclose(text);
         result = add_dir(path, in_stage_path);
         if(result == 1)
         {
