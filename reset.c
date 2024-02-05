@@ -188,6 +188,15 @@ int reset(char* argv)
         fprintf(stderr, "Repository has not been initialized\n");
         return 1;
     }
+    char* c = (char*)malloc(MAX_ADDRESS_SIZE);
+    char cwd[MAX_ADDRESS_SIZE];
+    getcwd(cwd, sizeof(cwd));
+    strcpy(c, repo_address);
+    if(strstr(cwd, c) == NULL)
+    {
+        fprintf(stderr, "Not in a repository\n");
+        return 1;
+    }
     if(strcat(repo_address, "/.neogit") == NULL)
     {
         fprintf(stderr, "Error in strcat /.neogit to repo_address\n");
@@ -271,13 +280,13 @@ int reset(char* argv)
     }
     if(in_stage)
     {
-        if((real_path = strstr(address, ".neogit")) == NULL)
+        if((real_path = strstr(address, cwd)) == NULL)
         {
             fprintf(stderr, "Something went wrong\n");
             return 1;
         }
-        real_path = real_path + strlen(".neogit");
-        sprintf(path, "%s%s", stage_path, real_path);
+        real_path = real_path + strlen(cwd)+1;
+        sprintf(path, "%s/%s", stage_path, real_path);
         if(stat(path, &path_stat) == -1)
         {
             fprintf(stderr, "Error in stat\n");

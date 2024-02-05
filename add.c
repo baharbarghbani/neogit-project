@@ -192,12 +192,15 @@ int add(char* argv)
         fprintf(stderr, OPENNING_DIRECTORY_ERROR);
         return 1;
     }
+    chdir(cwd);
     strcpy(tmp_cwd,cwd);
     repo_check(); //checking for initialization
     if(!exists){
         fprintf(stderr, "Repository hass not been initialized\n");
         return 1;
     }
+    char* c = (char*)malloc(MAX_ADDRESS_SIZE);
+    strcpy(c, repo_address);
     strcat(repo_address, "/.neogit");
     chdir(repo_address);
     DIR* dir = opendir("."); //changing to repo directory 
@@ -252,7 +255,7 @@ int add(char* argv)
         {
             sprintf(path, "%s/%s", cwd, argv);
         }
-        if(strstr(path, repo_address) != NULL) //is it in the repo or not
+        if(strstr(path, c) != NULL) //is it in the repo or not
         {
             is_in_repo = true;
         }
@@ -283,11 +286,10 @@ int add(char* argv)
         }
         else if(found)
         { 
-            
            strcpy(path, cwd);
            strcat(path, "/");
            strcat(path, argv);  //absolute path is done   
-           if(strstr(path, repo_address) == NULL)
+           if(strstr(path, c) == NULL)
            {
             fprintf(stderr, "The given name does not exist in repository\n");
             return 1;
@@ -372,9 +374,15 @@ if(is_file)
 if(is_directory)
 {
     text = fopen(stage_txt, "r");
-    char* str = (char*)malloc(MAX_ADDRESS_SIZE);
-    str = strstr(path, ".neogit/");
-    str = str + strlen(".neogit/");
+    if(text == NULL)
+    {
+        fprintf(stderr, "stage failed\n");
+        return 1;
+    }
+    char* str = (char*)malloc(2*MAX_ADDRESS_SIZE);
+    str = strstr(path, c);
+
+    str = str + strlen(c)+1;
 
     while(fgets(line, 1000, text) != NULL)
     {
