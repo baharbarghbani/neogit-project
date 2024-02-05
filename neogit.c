@@ -37,6 +37,7 @@ int global_config(int argc, char *argv[]);
 int add(char *argv);
 int reset(char *argc);
 int commit(char *argv, int argc);
+int nlog();
 // int alias(int argc, char const* argv[]);
 // int global_alias(int argc, char const* argv[]);
 // int username_alias(int argc, char const* argv[]);
@@ -335,6 +336,15 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[1], "commit") == 0 && strcmp(argv[2], "-m") == 0)
     {
         return commit(argv[3], argc);
+    }
+    else if(strcmp(argv[1], "log") == 0)
+    {
+        if(argc > 2)
+        {
+            fprintf(stderr, "Wrong number of arguements\n");
+            return 1;
+        }
+        return nlog();
     }
 
     // else
@@ -1029,7 +1039,7 @@ int commit(char *argv, int argc)
     fgets(branch, sizeof(branch), b);
     fprintf(info, "commit is done in branch \"%s\"\n", branch);
     fclose(b);
-    fprintf(info, "number of commited files are %d\nnumber of commited directories are %d\n", file_count, dir_count);
+    fprintf(info, "number of commited files are %d\nnumber of commited directories are %d\n\n", file_count, dir_count);
     fclose(info);
     sprintf(log_path, "%s/.log",repo);
     char* tmp_path =(char*)malloc(MAX_ADDRESS_SIZE);
@@ -1063,7 +1073,33 @@ int commit(char *argv, int argc)
     remove(tmp_path);
     return 0;
 }
+int nlog()
+{
+    char cwd[MAX_ADDRESS_SIZE];
+    getcwd(cwd, sizeof(cwd));
+    exists = false;
+    repo_check2();
+    if (!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    if (strstr(cwd, repo) == NULL)
+    {
+        fprintf(stderr, "Not in a neogit repository to commit\n");
+        return 1;
+    }
+    strcat(repo, "/.neogit");
+    sprintf(log_path, "%s/.log",repo);
+    log_file = fopen(log_path, "r");
+    char a[MAX_ADDRESS_SIZE];    
+    while(fgets(a,sizeof(a), log_file)!= NULL)
+    {
+        fprintf(stdout, "%s", a);
+    }
+    return 0;
 
+}
 // int alias(int argc, char const* argv[])
 // {
 //     if(argc != 4)
