@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include<time.h>
 #include "add.c"
-// #include "reset.c"
+#include "reset.c"
 char *username;
 char *email;
 FILE *repo_list;
@@ -16,7 +16,7 @@ int run_init(int argc, char* argv[]);
 int config(int argc, char* argv[]);
 int global_config(int argc, char* argv[]);
 int add(char* argv);
-// int reset(char* argc);
+int reset(char* argc);
 // int alias(int argc, char const* argv[]);
 // int global_alias(int argc, char const* argv[]);
 // int username_alias(int argc, char const* argv[]);
@@ -153,8 +153,8 @@ int main(int argc, char* argv[])
     //     }
     //     fclose(file);
     // }
-    email = (char *)malloc(1000);
-    username = (char *)malloc(1000);
+    email = (char *)malloc(MAX_ADDRESS_SIZE);
+    username = (char *)malloc(MAX_ADDRESS_SIZE);
     // chdir(current);
     // DIR* now = opendir(".");
     if (strcmp(argv[1], "init") == 0)
@@ -218,7 +218,41 @@ int main(int argc, char* argv[])
           return add(argv[2]);
         }
     }
-    
+    else if(strcmp(argv[1], "reset") == 0)
+    {
+        if(argc > 3)
+        {
+            if(strcmp(argv[2], "-f") == 0)
+            {
+                for(int i = 3; i < argc; i++)
+                {
+                    chdir(source);
+                    char command[MAX_ADDRESS_SIZE];
+                    sprintf(command, "neogit reset %s", argv[i]);
+                    system(command);
+                }
+                return 0;
+            }
+            else{
+                for(int i = 2; i < argc; i++)
+                {
+                    chdir(source);
+                    char command[MAX_ADDRESS_SIZE];
+                    sprintf(command, "neogit reset %s", argv[i]);
+                    system(command);
+                }
+                return 0;
+            }
+        }
+        if(argc == 3)
+        {
+            return reset(argv[2]);
+        }
+        else{
+            fprintf(stderr, "Wrong number of arguements\n");
+            return 1;
+        }
+    }
     // else
     // {
     //     int ln = strlen(line);
@@ -239,12 +273,15 @@ int main(int argc, char* argv[])
     //     fprintf(stderr, "Invalid command\n");
     // }
     // closedir(now);
+    // free(source);
+    // free(email);
+    // free(username);
     return 0;
 }
 int run_init(int argc, char* argv[])
 {
-    char cwd[2000];
-    char tmp_cwd[2000];
+    char cwd[200];
+    char tmp_cwd[200];
     bool exists = false;
     struct dirent *entry;
     if(argc != 2)
@@ -302,6 +339,7 @@ int run_init(int argc, char* argv[])
         fprintf(stderr, "Repository has already been initialized\n");
         return 1;
     }
+    fclose(repo_list);
 
     return 0;
 }
@@ -317,12 +355,12 @@ int config(int argc, char* argv[])
         fprintf(stderr, "Invalid local config command\n");
         return 1;
     }
-    char *cwd = (char *)malloc(2000);
-    char *tmp_cwd = (char *)malloc(2000);
-    char *address = (char *)malloc(2000);
+    char *cwd = (char *)malloc(MAX_ADDRESS_SIZE);
+    char *tmp_cwd = (char *)malloc(MAX_ADDRESS_SIZE);
+    char *address = (char *)malloc(MAX_ADDRESS_SIZE);
     struct dirent *entry;
     bool exists = 0;
-    if (getcwd(cwd, 2000) == NULL)
+    if (getcwd(cwd, MAX_ADDRESS_SIZE) == NULL)
     {
         fprintf(stderr, "Error in configuration\n");
         return 1;
@@ -339,7 +377,7 @@ int config(int argc, char* argv[])
         {
             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
             {
-                getcwd(address, 1000);
+                getcwd(address, MAX_ADDRESS_SIZE);
                 exists = true;
                 break;
             }
@@ -347,7 +385,7 @@ int config(int argc, char* argv[])
         if (exists)
             break;
 
-        if (getcwd(tmp_cwd, 2000) == NULL)
+        if (getcwd(tmp_cwd, MAX_ADDRESS_SIZE) == NULL)
         {
             fprintf(stderr, "Error occured\n");
             return 1;
@@ -385,7 +423,7 @@ int config(int argc, char* argv[])
                 return 1;
             }   
         }
-        getcwd(address, 2000);
+        getcwd(address, MAX_ADDRESS_SIZE);
         strcat(address, "/config");
         chdir(address);
         DIR* current = opendir(".");
@@ -449,13 +487,12 @@ int global_config(int argc, char* argv[])
         return 1;
     }
     char *address = "/home/asus/Documents/neogit";
-    chdir(address);
-    DIR *dir = opendir(".");
+    DIR *dir = opendir(address);
     struct dirent *entry;
     bool exists = false;
-    char *cwd = (char *)malloc(2000);
+    char *cwd = (char *)malloc(MAX_ADDRESS_SIZE);
     repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
-    char* repo = (char*)malloc(2000);
+    char* repo = (char*)malloc(MAX_ADDRESS_SIZE);
     while ((entry = readdir(dir)) != NULL)
     {
         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
@@ -479,8 +516,7 @@ int global_config(int argc, char* argv[])
     }
     closedir(dir);
     strcat(cwd, "/global_config");
-    chdir(cwd);
-    dir = opendir(".");
+    dir = opendir(cwd);
     if (strcmp(argv[3], "user.name") == 0)
     {
         strcat(cwd, "/global_name");
@@ -503,7 +539,7 @@ int global_config(int argc, char* argv[])
         return 1;
     }
     closedir(dir);
-   while(fgets(repo, 1000, repo_list) != NULL)
+   while(fgets(repo, MAX_ADDRESS_SIZE, repo_list) != NULL)
    {
         int length = strlen(repo);
         repo[length - 1] = '\0';
@@ -553,7 +589,8 @@ int global_config(int argc, char* argv[])
         closedir(dir);
    }
     // free(repo);
-    fclose(repo_list);
+    // free(cwd);
+    // fclose(repo_list);
     return 0;
 }
 // int alias(int argc, char const* argv[])

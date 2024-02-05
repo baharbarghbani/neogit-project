@@ -13,11 +13,11 @@
 #define MAX_ADDRESS_SIZE 2000
 bool exists;
 char* address;
-char* repo_address;
+char repo_address[2000];
 char* cwd;
 char* tmp_cwd;
 char* argv_copy;
-char* path;
+char path[2000];
 char* stage_path;
 char* stage_txt;
 char* line;
@@ -64,6 +64,11 @@ void repo_check()
             }
         }
         if(exists) break;
+        if(getcwd(address, MAX_ADDRESS_SIZE) == NULL)
+        {
+            fprintf(stderr,OPENNING_DIRECTORY_ERROR);
+            return;
+        }
         if(strcmp(address, "/") != 0)
         {
             if(chdir("..") != 0)
@@ -79,11 +84,6 @@ void repo_check()
 int add_dir(char* src, char* dest)
 {
     DIR* dir = opendir(src);
-    if(text == NULL)
-    {
-        fprintf(stderr, "Error in openning stage list\n");
-        return 1;
-    }
     if(dir == NULL)
     {
         fprintf(stderr, "Error in add_dir\n");
@@ -164,11 +164,9 @@ int add(char* argv)
 {
     r = 0;
     address = (char*)malloc(MAX_ADDRESS_SIZE);  //used
-    repo_address = (char*)malloc(MAX_ADDRESS_SIZE); //used
     cwd = (char*)malloc(MAX_ADDRESS_SIZE); //used
     tmp_cwd = (char*)malloc(MAX_ADDRESS_SIZE);
     argv_copy = (char*)malloc(MAX_ADDRESS_SIZE); //used
-    path = (char*)malloc(MAX_ADDRESS_SIZE); //used
     stage_path = (char*)malloc(MAX_ADDRESS_SIZE); //used
     stage_txt = (char*)malloc(MAX_ADDRESS_SIZE); //used
     line = (char*)malloc(MAX_ADDRESS_SIZE);
@@ -202,9 +200,6 @@ int add(char* argv)
     }
     strcat(repo_address, "/.neogit");
     chdir(repo_address);
-    // strcpy(count_path, repo_address);
-    // strcat(count_path, "/line_count");
-    // printf("%s", count_path);
     DIR* dir = opendir("."); //changing to repo directory 
     while((entry = readdir(dir)) != NULL) //searching if the stage directory exists
     {
@@ -255,9 +250,9 @@ int add(char* argv)
         }
         if(is_valid) //address is valid
         {
-                char* path_copy = realpath(argv, path); //getting the absolute path
+            sprintf(path, "%s/%s", cwd, argv);
         }
-        if(strstr(path_copy, repo_address) != NULL) //is it in the repo or not
+        if(strstr(path, repo_address) != NULL) //is it in the repo or not
         {
             is_in_repo = true;
         }
@@ -346,15 +341,9 @@ if(is_file)
     {
         chdir(repo_address);
         dir = opendir("."); //we're in .neogit repo
-        // line_count = getw(line_counting);
-        // fclose(line_counting);
         text = fopen(stage_txt, "a");
         fprintf(text, "%s  %s\n", path, name[word_count]);
         fclose(text);
-        // line_count++;
-        // line_counting = fopen(count_path, "w");
-        // fprintf(line_counting, "%d", line_count);
-        // fclose(line_counting);
         closedir(dir);
         chdir(stage_path);
         dir = opendir(".");
@@ -370,7 +359,6 @@ if(is_file)
     {
         chdir(stage_path);
         dir = opendir(".");
-        // remove(line);
         char* stage_copy = (char*)malloc(MAX_ADDRESS_SIZE);
         strcpy(stage_copy,stage_path);
         strcat(stage_copy, "/");
@@ -383,10 +371,6 @@ if(is_file)
 }
 if(is_directory)
 {
-    // line_count = getw(line_counting);
-    // printf("%d", line_count);
-    // fclose(line_counting);
-    // line_counting = fopen(count_path, "w");
     text = fopen(stage_txt, "r");
     char* str = (char*)malloc(MAX_ADDRESS_SIZE);
     str = strstr(path, ".neogit/");
@@ -427,5 +411,14 @@ if(is_directory)
         }
     }                       
 }
+    // free(name);
+    // free(address);
+    // free(repo_address);
+    // free(stage_path);
+    // free(stage_txt);
+    // free(path);
+    // free(path_copy);
+    // free(cwd);
+    // free(tmp_cwd);
     return 0;
 }
