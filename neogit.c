@@ -18,6 +18,7 @@ char *stage_path;
 char *email_path;
 char *global_path;
 char *current_branch;
+char* branch_path;
 FILE *log_file;
 char *log_path;
 FILE *repo_list;
@@ -38,6 +39,7 @@ int add(char *argv);
 int reset(char *argc);
 int commit(char *argv, int argc);
 int nlog();
+int branch(char* argv[], int argc);
 // int alias(int argc, char const* argv[]);
 // int global_alias(int argc, char const* argv[]);
 // int username_alias(int argc, char const* argv[]);
@@ -219,6 +221,7 @@ int main(int argc, char *argv[])
     //     }
     //     fclose(file);
     // }
+    branch_path = (char*)malloc(MAX_ADDRESS_SIZE);
     stage_path = (char *)malloc(MAX_ADDRESS_SIZE);
     address = (char *)malloc(MAX_ADDRESS_SIZE);
     current_branch = (char *)malloc(MAX_ADDRESS_SIZE);
@@ -346,7 +349,10 @@ int main(int argc, char *argv[])
         }
         return nlog();
     }
-
+    else if(strcmp(argv[1], "branch") == 0)
+    {
+        return branch(argv, argc);
+    }
     // else
     // {
     //     int ln = strlen(line);
@@ -869,15 +875,90 @@ int global_config(int argc, char *argv[])
     // fclose(repo_list);
     return 0;
 }
-// int branch(char* argv)
-// {
-//     branches = fopen(branch_list, "r");
-//     char a[MAX_ADDRESS_SIZE];
-//     while(fgets(a, MAX_ADDRESS_SIZE, branches) != NULL)
-//     {
-
-//     }
-// }
+int branch(char* argv[], int argc)
+{
+    if(argc >3)
+    {
+        fprintf(stderr, "Wrong number of arguements for branch\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    char c[MAX_ADDRESS_SIZE];
+    if(strcpy(c, repo) == NULL)
+    {
+        fprintf(stderr, "Failed to copy repo address to c\n");
+        return 1;
+    }
+    strcat(repo, "/.neogit");
+    sprintf(branch_list, "%s/.branches.txt", repo);
+    branches = fopen(branch_list, "r");
+    if(branches == NULL)
+    {
+        fprintf(stderr, "Failed to open branches file\n");
+        return 1;
+    }
+    char r[MAX_ADDRESS_SIZE];
+    char t[MAX_ADDRESS_SIZE];
+    sprintf(current_branch, "%s/.current_branch.txt", repo);
+    FILE* file = fopen(current_branch, "r");
+    if(file == NULL)
+    {
+        fprintf(stderr, "Failed to open current branch file\n");
+        return 1;
+    }
+    char b[MAX_ADDRESS_SIZE];
+    fgets(b, sizeof(b), file);
+    char s[MAX_ADDRESS_SIZE];
+    sscanf(b, "%s", s);
+    if(argc == 2)
+    {
+        while(fgets(r, sizeof(r), branches)!= NULL)
+        {
+            sscanf(r, "%s", t);
+            if(strcmp(s,t) == 0)
+            {
+                fprintf(stdout, "*%s  ", t);
+            }
+            else{
+                fprintf(stdout, "%s  ", t);
+            }
+        }
+        rewind(branches);
+        return 0;
+    }
+    char* a = (char*)malloc(MAX_ADDRESS_SIZE);
+    bool repeat = false;
+    char l[MAX_ADDRESS_SIZE];
+    while(fgets(l, sizeof(l), branches)!= NULL)
+    {
+        sscanf(l, "%s", a);
+        if(strcmp(argv[2], a) == 0)
+        {
+            repeat = true;
+        }
+    }
+    if(repeat)
+    {
+        fprintf(stderr, "Branch %s already exists\n",argv[2]);
+        return 1;
+    }
+    fclose(file);
+    fclose(branches);
+    char* command = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(branch_path, "%s/%s", repo, argv[2]);
+    sprintf(command, "mkdir -p %s", branch_path);
+    system(command);
+    branches = fopen(branch_list, "a");
+    fprintf(branches, "%s  %s\n", argv[2], b);
+    fclose(branches);
+    return 0;
+}
 int commit(char *argv, int argc)
 {
     char cwd[MAX_ADDRESS_SIZE];
@@ -977,7 +1058,7 @@ int commit(char *argv, int argc)
     commit_id = fopen(id_path, "w");
     fprintf(commit_id, "%d", (id+1));
     fclose(commit_id);
-    sprintf(commit_path, "%s/commit_%d", repo, id);
+    sprintf(commit_path, "%s/#%d", repo, id);
     char* command = (char*)malloc(2*MAX_ADDRESS_SIZE);
     sprintf(command, "mkdir -p %s", commit_path);
     system(command);
@@ -1002,6 +1083,11 @@ int commit(char *argv, int argc)
     system(command);
     sprintf(commit_info, "%s/.info", commit_path);
     info = fopen(commit_info, "w");
+    if(info == NULL)
+    {
+        fprintf(stderr, "Failed to open #%d commit info\n", id);
+        return 1;
+    }
     time_t rawtime;
     struct tm *timeinfo;
     char time_string[100];
@@ -1035,9 +1121,20 @@ int commit(char *argv, int argc)
     fclose(n);
     fprintf(info, "user name is : %suser email is : %s", un, ue);
     FILE* b = fopen(current_branch,"r");
+    fprintf(stdout, "%s", current_branch);
+    if(b == NULL)
+    {
+        fprintf(stderr, "Failed to open current branch list\n");
+        return 1;
+    }
     char branch[MAX_ADDRESS_SIZE];
-    fgets(branch, sizeof(branch), b);
+    char d[MAX_ADDRESS_SIZE];
+    char* f = (char*)malloc(MAX_ADDRESS_SIZE);
+    fscanf(b, "%s", branch);
     fprintf(info, "commit is done in branch \"%s\"\n", branch);
+    sprintf(f, "%s/%s", commit_path, branch); //new
+    sprintf(command, "mkdir -p %s",f);//new
+    system(command);//new
     fclose(b);
     fprintf(info, "number of commited files are %d\nnumber of commited directories are %d\n\n", file_count, dir_count);
     fclose(info);
@@ -1045,8 +1142,24 @@ int commit(char *argv, int argc)
     char* tmp_path =(char*)malloc(MAX_ADDRESS_SIZE);
     sprintf(tmp_path, "%s/.tmp.txt", repo);
     FILE* tmp = fopen(tmp_path, "w");
-    // sprintf(command, "cp -r %s %s", log_path, tmp_path);
+    if(tmp == NULL)
+    {
+        fprintf(stderr,"Failed to open tmp file\n");
+        return 1;
+    }
+    log_file = fopen(log_path, "a");
+    if(log_file == NULL)
+    {
+        fprintf(stderr, "Failed to open log file\n");
+        return 1;
+    }
+    fclose(log_file);
     log_file = fopen(log_path, "r");
+    if(log_file == NULL)
+    {
+        fprintf(stderr, "Failed to open log file\n");
+        return 1;
+    }
     char a[MAX_ADDRESS_SIZE];
     while(fgets(a, sizeof(a), log_file) != NULL)
     {
@@ -1067,10 +1180,28 @@ int commit(char *argv, int argc)
     {
         fprintf(log_file, "%s", a);
     }
+    sprintf(command, "rm -r %s", stage_path); //new
+    system(command); //new
     fclose(log_file);
     fclose(tmp);
     fclose(info);
     remove(tmp_path);
+    sprintf(command, "mkdir -p %s/HEAD", repo);
+    system(command);
+    sprintf(tmp_path, "%s/HEAD/commit", repo);
+    sprintf(command, "cp -r %s %s", commit_path, tmp_path);
+    system(command);
+    sprintf(tmp_path, "%s/%s/.lastcommit.txt",repo,branch);
+    fprintf(stdout, "%s", tmp_path);
+    FILE* fp = fopen(tmp_path, "w");
+    if(fp == NULL)
+    {
+        fprintf(stderr, "Failed openning last commit file\n");
+        return 1;
+    }
+    fprintf(fp, "#%d", id);
+    fclose(fp);
+    
     return 0;
 }
 int nlog()
