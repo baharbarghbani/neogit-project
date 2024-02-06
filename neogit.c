@@ -20,6 +20,7 @@ char *global_path;
 char *current_branch;
 char* branch_path;
 FILE *log_file;
+char* shortcut;
 char *log_path;
 FILE *repo_list;
 FILE *branches;
@@ -27,7 +28,6 @@ FILE *commit_id;
 FILE *info;
 char *commit_path;
 char *commit_info;
-// char stage_path[MAX_ADDRESS_SIZE];
 char *branch_list;
 char *id_path;
 int id;
@@ -40,12 +40,17 @@ int reset(char *argc);
 int commit(char *argv, int argc);
 int nlog();
 int branch(char* argv[], int argc);
-// int alias(int argc, char const* argv[]);
-// int global_alias(int argc, char const* argv[]);
-// int username_alias(int argc, char const* argv[]);
-// int email_alias(int argc, char const* argv[]);
-// int username_global_alias(int argc, char const* argv[]);
-// int email_global_alias(int argc,char const* argv[]);
+int set_s(char* argv1, char* argv2, int argc);
+int replace_s(char* argv1, char* argv2, int argc);
+int remove_s(char* argv, int argc);
+int alias(int argc, char* argv1, char* argv2);
+int global_alias(int argc, char* argv[]);
+int looggn(char* argv, int argc);
+int branch_log(char* argv, int argc);
+int author_log(char* argv, int argc);
+int word_log(char* argv, int argc);
+int checkout_branch(char* argv);
+int checkout_commit(char*argc);
 void repo_check2()
 {
     struct dirent *entry;
@@ -90,6 +95,88 @@ void repo_check2()
     } while (strcmp(address, "/") != 0);
     return;
 }
+int check_input(char* argv)
+{
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    bool is_branch = false;
+    strcat(repo,"/.neogit");
+    sprintf(branch_list, "%s/.branches.txt", repo);
+    branches = fopen(branch_list, "r");
+    if(branches == NULL)
+    {
+        fprintf(stderr, "Failed to open branch list\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    char b[MAX_ADDRESS_SIZE];
+    while(fgets(a, sizeof(a), branches) != NULL)
+    {
+        sscanf(a, "%s", b);
+        size_t ln = strlen(b);
+        if(b[ln-1] == '\n')
+        {
+            b[ln-1] = '\0';
+        }
+        if(strcmp(b, argv) == 0)
+        {
+            is_branch;
+            break;
+        }
+    }
+    int r;
+    if(is_branch)
+    {
+        r = checkout_branch(argv);
+    }
+    else{
+        r = checkout_commit(argv);
+    }
+    return r;
+}
+int find_shortcut(char* argv, int argc)
+{
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    sprintf(shortcut, "%s/.neogit/.shortcut.txt", repo);
+    FILE* fptr = fopen(shortcut, "r");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut file\n");
+        return 1;
+    }
+    char a[200];
+    bool s_exist = false;
+    char c[200];
+    char d[200];
+    while(fgets(a, sizeof(a), fptr) != NULL)
+    {
+        sscanf(a, "%s  %s\n", c, d);
+        if(strcmp(c, argv) == 0)
+        {
+            s_exist = true;
+            break;
+        }
+    }
+    if(!s_exist)
+    {
+        fprintf(stderr, "This shortcut has not been set\n");
+        return 1;
+    }
+    fclose(fptr);
+    int result = commit(d, argc);
+    return result;
+}
 int main(int argc, char *argv[])
 {
     char *source = (char *)malloc(MAX_ADDRESS_SIZE);
@@ -100,127 +187,6 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Invalid command: too few arguements\n");
         return 1;
     }
-    // char* current = (char*)malloc(2000);
-    // getcwd(current, 2000);
-    // char* cwd = (char*)malloc(2000);
-    // struct dirent* entry;
-    // char* tmp_cwd = (char*)malloc(2000);
-    // char* address = (char*)malloc(2000);
-    // bool exists = false;
-    // if(getcwd(cwd,2000) == NULL)
-    // {
-    //     fprintf(stderr, "Error opeening current directory\n");
-    //     return 1;
-    // }
-    // do
-    // {
-    //     DIR *dir = opendir(".");
-    //     if (dir == NULL)
-    //     {
-    //         fprintf(stderr, "Error occured\n");
-    //         return 1;
-    //     }
-    //     while ((entry = readdir(dir)) != NULL)
-    //     {
-    //         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-    //         {
-    //             getcwd(address, 2000);
-    //             exists = true;
-    //             break;
-    //         }
-    //     }
-    //     if (exists)
-    //         break;
-
-    //     if (getcwd(tmp_cwd, 2000) == NULL)
-    //     {
-    //         fprintf(stderr, "Error occured\n");
-    //         return 1;
-    //     }
-    //     if (strcmp(tmp_cwd, "/") != 0)
-    //     {
-    //         if (chdir("..") != 0)
-    //         {
-    //             fprintf(stderr, "Error occured\n");
-    //             return 1;
-    //         }
-    //     }
-    // closedir(dir);
-    // } while (strcmp(tmp_cwd, "/") != 0);
-    // bool ok = false;
-    // char* line = (char*)malloc(2000);
-    // if(exists && strcmp(argv[1], "init") == 0)
-    // {
-    //     fprintf(stderr, "Repository has been initialized\n");
-    //     return 1;
-    // }
-    // else if(exists && strcmp(argv[1], "init") != 0)
-    // {
-    //     strcat(address, "/.neogit");
-    //     chdir(address);
-    //     DIR* dir = opendir(".");
-    //     strcat(address, "/alias.txt");
-    //     FILE* file = fopen(address, "r");
-    //     char* command = (char*)malloc(2000);    //argv[1] might aliased command
-    //     while(fgets(line, 2000, file) != NULL) //line is from alias txt
-    //     {
-    //         if(strstr(line, argv[1]) != NULL) //command has been aliased locally and is saved in line
-    //         {
-    //             line = line + strlen(argv[1]) +2;
-    //             ok = true;
-    //             break;
-    //         }
-    //     }
-    //     if(!ok) //must search in globally alised commands
-    //     {
-    //         FILE* globe = fopen("/home/asus/Documents/neogit/alias_global.txt", "r");
-    //         if(globe == NULL)
-    //         {
-    //             fprintf(stderr, "Error in openning alias_global.txt\n");
-    //             return 1;
-    //         }
-    //         while(fgets(line, 2000, globe) != NULL)
-    //         {
-    //             if(strstr(line, argv[1]) != NULL)
-    //             {
-    //                 ok = true;
-    //                 line = line + strlen(argv[1]) + 2;
-    //                 break;
-    //             }
-    //         }
-    //         fclose(globe);
-    //     }
-    //     if(!ok)
-    //     {
-    //         fprintf(stderr, "Invalid command\n");
-    //         return 1;
-    //     }
-    //     fclose(file);
-    //     closedir(dir);
-    // }
-    // else if(!exists && strcmp(argv[1], "init") == 0)
-    // {
-    //     return run_init(argc,argv);
-    // }
-    // else if(!exists && strcmp(argv[1],"init") != 0)
-    // {
-    //     FILE* file = fopen("/home/asus/Documents/neogit/alias_global.txt", "r");
-    //     while(fgets(line, 2000, file)!= NULL)
-    //     {
-    //         if(strstr(line, argv[1]) != NULL)
-    //         {
-    //             line = line + strlen(argv[1]) + 2;
-    //             ok = true;
-    //             break;
-    //         }
-    //     }
-    //     if(!ok)
-    //     {
-    //         fprintf(stderr, "Invalid command\n");
-    //         return 1;
-    //     }
-    //     fclose(file);
-    // }
     branch_path = (char*)malloc(MAX_ADDRESS_SIZE);
     stage_path = (char *)malloc(MAX_ADDRESS_SIZE);
     address = (char *)malloc(MAX_ADDRESS_SIZE);
@@ -236,31 +202,165 @@ int main(int argc, char *argv[])
     branch_list = (char *)malloc(MAX_ADDRESS_SIZE);
     id_path = (char *)malloc(MAX_ADDRESS_SIZE);
     log_path = (char*)malloc(MAX_ADDRESS_SIZE);
-    // chdir(current);
-    // DIR* now = opendir(".");
+    shortcut = (char*)malloc(MAX_ADDRESS_SIZE);
+    exists = false;
+    repo_check2();
+    char* gla = "/home/asus/Documents/neogit/alias_global.txt";
+    char* ccc = "/home/asus/Documents/neogit";
+    char* alias_path = (char*)malloc(MAX_ADDRESS_SIZE);
+    struct dirent* entry;
+    bool valid_name = false;
+    found = false;
+    char a[100];
+    char n[100];
+    char* c = (char*)malloc(MAX_ADDRESS_SIZE);
+    DIR* dir = opendir(ccc);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Error openning project file\n");
+        return 1;
+    }
+    bool glo_exist = false;
+    while((entry = readdir(dir)) != NULL)
+    {
+        if(strcmp(entry->d_name, "alias_global.txt")==0)
+        {
+            glo_exist = true;
+            break;
+        }
+    }
+    closedir(dir);
+    if(exists)
+    {
+        bool alias_exist = false;
+        strcat(repo, "/.neogit");
+        dir = opendir(repo);
+        while((entry = readdir(dir)) != NULL)
+        {
+            if(strcmp(entry->d_name, ".alias.txt") == 0)
+            {
+                alias_exist = true;
+            }
+        }
+        if(alias_exist)
+        {
+            sprintf(alias_path, "%s/.alias.txt", repo);
+            FILE* alias_file = fopen(alias_path, "r");
+            if(alias_file == NULL)
+            {
+                fprintf(stderr, "Error openning alias file in main\n");
+                return 1;
+            }
+            while(fgets(a, 100, alias_file) != NULL)
+            {
+                sscanf(a, "%s", n);
+                c = a + strlen(n) + 2;
+                if(strcmp(n, argv[1])==0)
+                {
+                    valid_name = true;
+                    found = true;
+                    break;
+                } 
+            }
+        }
+    }
+    if(!exists && glo_exist)
+    {
+        FILE* fptr = fopen(gla, "r");
+        if(fptr == NULL)
+        {
+            fprintf(stderr, "Error openning alias global file\n");
+            return 1;
+        }
+        while(fgets(a, 100, fptr) != NULL)
+        {
+            sscanf(a, "%s", n);
+            c = a + strlen(n) + 2;
+            if(strcmp(n, argv[1]) == 0)
+            {
+                valid_name = true;
+                found = true;
+                break;
+            }
+        }
+    }
+    if(!exists && !glo_exist)
+    {
+        fprintf(stderr, "Not a aliased commnad\n");
+        return 1;
+    }
+    if(found)
+    {
+        if(strcmp(c, "neogit init") == 0)
+        {
+            sprintf(c, "neogit init");
+            system(c);
+            return 0;
+        }
+        else if(strstr(c, "neogit config --global") != NULL)
+        {
+            sprintf(address, "%s %s", c, argv[1]);
+            system(address);
+            return 0;
+        }
+        else if(strstr(c, "neogit config") != NULL)
+        {
+            sprintf(address, "%s %s", c, argv[1]);
+            system(address);
+            return 0;
+        }
+        else if(strstr(c, "neogit add") != NULL)
+        {
+            sprintf(address, "%s %s", c, argv[1]);
+            system(address);
+            return 0;
+        }
+        else if(strstr(c, "neogit reset") != NULL)
+        {
+            sprintf(address, "%s %s", c, argv[1]);
+            system(address);
+            return 0;
+        }
+         else if(strstr(c, "neogit branch") != NULL)
+        {
+            sprintf(address, "%s %s", c, argv[1]);
+            system(address);
+            return 0;
+        }
+         else if(strstr(c, "neogit commit") != NULL)
+        {
+            sprintf(address, "%s %s", c, argv[1]);
+            system(address);
+            return 0;
+        }
+        
+    }
+
+
+
     if (strcmp(argv[1], "init") == 0)
     {
         return run_init(argc, argv);
     }
     else if ((strcmp(argv[1], "config") == 0))
     {
-        if (argc > 2)
+        if(strcmp(argv[2], "--global")==0)
         {
-            // if(strstr(argv[2], "alias.") != NULL)
-            // {
-            //     return alias(argc,argv);
-            // }
-
-            if (strcmp(argv[2], "--global") == 0) //&& strstr(argv[3], "alias.") == NULL)
+            if(strstr(argv[3], "alias.") != NULL)
             {
+                return global_alias(argc, argv);
+            }
+            else{
                 return global_config(argc, argv);
             }
         }
-        // if(strcmp(argv[2], "--global") == 0 && strstr(argv[3], "alias.") != NULL)
-        // {
-        //     return global_alias(argc, argv);
-        // }
-        return config(argc, argv);
+        else if(strstr(argv[2], "alias.") != NULL)
+        {
+            return alias(argc, argv[2], argv[3]);
+        }
+        else{
+            return config(argc, argv);
+        }
     }
     else if ((strcmp(argv[1], "add") == 0))
     {
@@ -336,53 +436,135 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    else if (strcmp(argv[1], "commit") == 0 && strcmp(argv[2], "-m") == 0)
+    else if (strcmp(argv[1], "commit") == 0)
     {
-        return commit(argv[3], argc);
+        if(argc == 4)
+        {
+            if(strcmp(argv[2], "-m") == 0)   return commit(argv[3], argc);
+            if(strcmp(argv[2], "-s") == 0) 
+            {
+                int r = find_shortcut(argv[3], argc);
+                if(r == 1)
+                {
+                    return 1;
+                }
+            } 
+            else{
+                fprintf(stderr, "Invalid config command\n");
+                return 1;
+            }
+        }
+        else{
+            fprintf(stderr, "Wrong number of arguements for commit %s", argv[3]);
+            return 1;
+        }
     }
     else if(strcmp(argv[1], "log") == 0)
     {
-        if(argc > 2)
+        if(argc == 4)
         {
-            fprintf(stderr, "Wrong number of arguements\n");
-            return 1;
+            if(strcmp(argv[2], "-n") == 0)
+            {
+                return looggn(argv[3], argc);
+            }
+            else if(strcmp(argv[2], "-branch") == 0)
+            {
+                return branch_log(argv[3], argc);
+            }
+            else if(strcmp(argv[2], "-author") == 0)
+            {
+                return author_log(argv[3], argc);
+            }
+            else if(strcmp(argv[2], "-search") == 0)
+            {
+                return word_log(argv[3], argc);
+            }
+            
         }
-        return nlog();
+        else if(argc > 4)
+        {
+            if(strcmp(argv[2], "-search") == 0)
+            {
+                for(int i = 3; i < argc; i++)
+                {
+                    chdir(source);
+                    char command[MAX_ADDRESS_SIZE];
+                    sprintf(command, "neogit log -search %s", argv[i]);
+                    system(command);
+                }
+                return 0;
+            }
+        }
+        else{
+            return nlog();
+        }
     }
     else if(strcmp(argv[1], "branch") == 0)
     {
         return branch(argv, argc);
     }
-    // else
-    // {
-    //     int ln = strlen(line);
-    //     line[ln-1] = '\0';
-    //     if(ok)
-    //     {
-    //     if(strcmp(line,"init")== 0) return run_init(argc,argv);
-    //     else if(strcmp(line, "config user.name") == 0)
-    //     {
-    //         return username_alias(argc,argv);
-    //     }
-    //     else if(strcmp(line, "config user.email") == 0) return email_alias(argc,argv);
-    //     else if(strcmp(line, "config --global user.name") == 0) return username_global_alias(argc,argv);
-    //     else if(strcmp(line, "config --global user.email") == 0) return email_global_alias(argc,argv);
-    //     else if(strcmp(line, "config alias") == 0) return alias(argc,argv);
-    //     else if(strcmp(line, "config --global alias") == 0) return global_alias(argc,argv);
-    //     }
-    //     fprintf(stderr, "Invalid command\n");
-    // }
-    // closedir(now);
-    // free(source);
-    // free(email);
-    // free(username);
+    else if(strcmp(argv[1], "set") == 0 && strcmp(argv[2], "-m") == 0 && strcmp(argv[4], "-s") == 0)
+    {
+        return set_s(argv[3], argv[5], argc);
+    }
+    else if(strcmp(argv[1], "replace") == 0 && strcmp(argv[2], "-m") == 0 && strcmp(argv[4], "-s") == 0)
+    {
+        return replace_s(argv[5], argv[3], argc);
+    }
+    else if(strcmp(argv[1], "remove") == 0)
+    {
+        if(argc == 4)
+        {
+            if(strcmp(argv[2], "-s") == 0)
+            {
+                return remove_s(argv[3], argc);
+            }
+            else{
+                fprintf(stderr, "Invalid command for commit\n");
+                return 1;
+            }
+        }
+        else if(argc >4)
+        {
+            fprintf(stderr, "Too many arguements for remove shortcut\n");
+            return 1;
+        }
+        else{
+            fprintf(stderr, "few number of arguements for remove shortcut\n");
+            return 1;
+        }
+
+    }
+    else if(strcmp(argv[1], "checkout") == 0)
+    {
+        if(argc > 3)
+        {
+            fprintf(stderr, "Too many arguements in neogit checkout\n");
+            return 1;
+        }
+        if (argc < 3)
+        {
+            fprintf(stderr, "few arguements in neogit checkout\n");
+            return 1;
+        }
+        else{
+            return check_input(argv[2]);
+        }
+
+
+    }
+    else{
+        fprintf(stderr, "Invalid command\n");
+        return 1;
+    }
+
     return 0;
 }
 int run_init(int argc, char *argv[])
 {
-    char cwd[200];
-    char tmp_cwd[200];
-    bool exists = false;
+    char cwd[2000];
+    char tmp_cwd[2000];
+    exists = false;
     struct dirent *entry;
     if (argc != 2)
     {
@@ -394,6 +576,7 @@ int run_init(int argc, char *argv[])
         fprintf(stderr, "No current working directory in init\n");
         return 1;
     }
+    chdir(cwd);
     do
     {
         DIR *dir = opendir(".");
@@ -411,8 +594,12 @@ int run_init(int argc, char *argv[])
             }
 
             if (getcwd(tmp_cwd, sizeof(tmp_cwd)) == NULL)
+            {
+                fprintf(stderr, "Error getting tmp_cwd\n");
                 return 1;
 
+            }
+    
             if (strcmp(tmp_cwd, "/") != 0)
             {
                 if (chdir("..") != 0)
@@ -835,7 +1022,6 @@ int global_config(int argc, char *argv[])
         }
         strcat(repo, "/config");
         chdir(repo);
-        fprintf(stdout, "repo is %s\n", repo);
         DIR *dir = opendir(".");
         if (strcmp(argv[3], "user.name") == 0)
         {
@@ -929,6 +1115,7 @@ int branch(char* argv[], int argc)
                 fprintf(stdout, "%s  ", t);
             }
         }
+        fprintf(stdout, "\n");
         rewind(branches);
         return 0;
     }
@@ -1066,8 +1253,12 @@ int commit(char *argv, int argc)
     sprintf(in_commit, "%s/stage", commit_path);
     sprintf(command, "cp -r %s %s", stage_path,in_commit);
     system(command);
-    char* stlist = (char*)malloc(MAX_ADDRESS_SIZE);;
-    sprintf(stlist, "%s/stage_list.txt", repo);
+    char* shortc = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(shortc, "%s/.shortcut.txt", repo);
+    sprintf(in_commit, "%s/.shortcut.txt", commit_path);
+    sprintf(command, "cp %s %s", shortc, in_commit);
+    char* stlist = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(stlist, "%s/stage_list.txt", repo);    
     sprintf(in_commit, "%s/stage_list.txt", commit_path);
     sprintf(command, "cp %s %s", stlist, in_commit);
     system(command);
@@ -1080,6 +1271,11 @@ int commit(char *argv, int argc)
     sprintf(commit_cb, "%s/.current_branch.txt", commit_path);
     sprintf(current_branch, "%s/.current_branch.txt", repo);
     sprintf(command, "cp %s %s", current_branch, commit_cb);
+    system(command);
+    char* alis = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(alis, "%s/.alias.txt", repo);
+    sprintf(in_commit, "%s/.alias.txt", commit_path);
+    sprintf(command, "cp %s %s", repo,in_commit);
     system(command);
     sprintf(commit_info, "%s/.info", commit_path);
     info = fopen(commit_info, "w");
@@ -1121,7 +1317,6 @@ int commit(char *argv, int argc)
     fclose(n);
     fprintf(info, "user name is : %suser email is : %s", un, ue);
     FILE* b = fopen(current_branch,"r");
-    fprintf(stdout, "%s", current_branch);
     if(b == NULL)
     {
         fprintf(stderr, "Failed to open current branch list\n");
@@ -1192,7 +1387,6 @@ int commit(char *argv, int argc)
     sprintf(command, "cp -r %s %s", commit_path, tmp_path);
     system(command);
     sprintf(tmp_path, "%s/%s/.lastcommit.txt",repo,branch);
-    fprintf(stdout, "%s", tmp_path);
     FILE* fp = fopen(tmp_path, "w");
     if(fp == NULL)
     {
@@ -1201,7 +1395,7 @@ int commit(char *argv, int argc)
     }
     fprintf(fp, "#%d", id);
     fclose(fp);
-    
+
     return 0;
 }
 int nlog()
@@ -1231,608 +1425,690 @@ int nlog()
     return 0;
 
 }
-// int alias(int argc, char const* argv[])
-// {
-//     if(argc != 4)
-//     {
-//         fprintf(stderr, "Wrong number of arguements\n");
-//         return 1;
-//     }
-//     struct dirent* entry;
-//     bool exists = false;
-//     char* cwd = (char*)malloc(2000);
-//     char* tmp_cwd = (char*)malloc(2000);
-//     if(getcwd(cwd, 2000) == NULL)
-//     {
-//         fprintf(stderr, "Error occured in alias\n");
-//         return 1;
-//     }
-//     char* add = (char*)malloc(2000);
-//     getcwd(add, 2000);
-//     do// int alias(int argc, char const* argv[])
-// {
-//     if(argc != 4)
-//     {
-//         fprintf(stderr, "Wrong number of arguements\n");
-//         return 1;
-//     }
-//     struct dirent* entry;
-//     bool exists = false;
-//     char* cwd = (char*)malloc(2000);
-//     char* tmp_cwd = (char*)malloc(2000);
-//     if(getcwd(cwd, 2000) == NULL)
-//     {
-//         fprintf(stderr, "Error occured in alias\n");
-//         return 1;
-//     }
-//     char* add = (char*)malloc(2000);
-//     getcwd(add, 2000);
-//     do
-//     {
-//         DIR *dir = opendir(".");
-//         getcwd(add, 2000);
-//         if (dir == NULL)
-//         {
-//             fprintf(stderr, "Error openning directory in init\n");
-//             return 1;
-//         }
-//         while ((entry = readdir(dir)) != NULL)
-//         {
-//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-//             {
-//                 exists = true;
-//                 break;
-//             }
-//         if (getcwd(tmp_cwd, 2000) == NULL)
-//                 return 1;
+int set_s(char* argv1, char* argv2, int argc)
+{
+    if(argc > 6)
+    {
+        fprintf(stderr, "Too many arguements\n");
+        return 1;
+    }
+    if(argc < 6)
+    {
+        fprintf(stderr, "few arguements\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    strcat(repo, "/.neogit");
+    sprintf(shortcut, "%s/.shortcut.txt", repo);
+    FILE* fptr = fopen(shortcut, "a");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut file\n");
+        return 1;
+    }
+    fprintf(fptr, "%s  %s\n", argv2, argv1);
+    fclose(fptr);
+return 0;
+}
+int replace_s(char* argv1, char* argv2, int argc)
+{
+    if(argc > 6)
+    {
+        fprintf(stderr, "Too many arguements in replacing shortcut\n");
+        return 1;
+    }
+    if(argc < 6)
+    {
+        fprintf(stderr, "few arguements in replacing shortcut\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    strcat(repo, "/.neogit");
+    sprintf(shortcut, "%s/.shortcut.txt", repo);
+    FILE* fptr = fopen(shortcut, "r");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut file\n");
+        return 1;
+    }
+    char* tmp = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(tmp, "%s/.tmp.txt", repo);
+    FILE* tmp_file = fopen(tmp, "w");
+    if(tmp_file == NULL)
+    {
+        fprintf(stderr, "Failed to open tmp file in replacing shortcut\n");
+        return 1;
+    }
+    char a[300];
+    char s[300];
+    char c[300];
+    char co[300];
+    bool shortcut_e = false;
+    while(fgets(a, sizeof(a), fptr) != NULL)
+    {
+        sscanf(a, "%s  %s\n", s, c);
+        if(strcmp(s, argv1) == 0)
+        {
+            if(strcpy(co, c) == NULL)
+            {
+                fprintf(stderr, "Failed to copy c to co in replace\n");
+                return 1;
+            }
+            continue;
+        }
+        else{
+            fprintf(tmp_file, "%s", a);
+        }
+    }
+    rewind(fptr);
+    fclose(fptr);
+    fclose(tmp_file);
+    tmp_file = fopen(tmp, "r");
+    if(tmp_file == NULL)
+    {
+        fprintf(stderr, "Failed to open tmp file in replacing shortcut\n");
+        return 1;
+    }
+    fptr = fopen(shortcut, "w");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut file\n");
+        return 1;
+    }
+    while(fgets(a, sizeof(a), tmp_file) != NULL)
+    {
+        fprintf(fptr, "%s", a);
+    }
+    fclose(fptr);
+    fclose(tmp_file);
+    fptr = fopen(shortcut, "a");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut list\n");
+        return 1;
+    }
+    fprintf(fptr, "%s  %s\n", argv1, argv2);
+    fclose(fptr);
+    remove(tmp);
+return 0;
+}
+int remove_s(char* argv, int argc)
+{
+    if(argc > 4)
+    {
+        fprintf(stderr, "Too many arguements in replacing shortcut\n");
+        return 1;
+    }
+    if(argc < 4)
+    {
+        fprintf(stderr, "few arguements in replacing shortcut\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    strcat(repo, "/.neogit");
+    sprintf(shortcut, "%s/.shortcut.txt", repo);
+    FILE* fptr = fopen(shortcut, "r");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut file\n");
+        return 1;
+    }
+    char* tmp = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(tmp, "%s/.tmp.txt", repo);
+    FILE* tmp_file = fopen(tmp, "w");
+    if(tmp_file == NULL)
+    {
+        fprintf(stderr, "Failed to open tmp file in replacing shortcut\n");
+        return 1;
+    }
+    char a[300];
+    char b[300];
+    char c[300];
+    while(fgets(a, sizeof(a), fptr) != NULL)
+    {
+        sscanf(a, "%s  %s\n",b, c);
+        if(strcmp(b, argv) == 0)
+        {
+            continue;
+        }
+        else{
+            fprintf(tmp_file, "%s", a);
+        }
+    }
+    rewind(fptr);
+    fclose(fptr);
+    fclose(tmp_file);
+    tmp_file = fopen(tmp, "r");
+    if(tmp_file == NULL)
+    {
+        fprintf(stderr, "Failed to open tmp file in replacing shortcut\n");
+        return 1;
+    }
+    fptr = fopen(shortcut, "w");
+    if(fptr == NULL)
+    {
+        fprintf(stderr, "Failed to open shortcut file\n");
+        return 1;
+    }
+    while(fgets(a, sizeof(a), tmp_file) != NULL)
+    {
+        fprintf(fptr, "%s", a);
+    }
+    fclose(fptr);
+    fclose(tmp_file);
+    remove(tmp);
+    return 0;
+}
+int alias(int argc, char* argv1, char* argv2)
+{
+    if(argc> 4)
+    {
+        fprintf(stderr, "Too many arguements in alias\n");
+        return 1;
+    }
+    if(argc < 4)
+    {
+        fprintf(stderr, "feww arguements in alias\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    if(strcat(repo, "/.neogit") == NULL)
+    {
+        fprintf(stderr, "Failed to strcat .neogit to repo in alias\n");
+        return 1;
+    }
+    char* alias_path = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(alias_path, "%s/.alias.txt", repo);
+    FILE* alias_file = fopen(alias_path, "a");
+    if(alias_file == NULL)
+    {
+        fprintf(stderr, "Failed to open alias file\n");
+        return 1;
+    }
+    char* commands = (char*)malloc(200);
+    sprintf(commands, "/home/asus/Documents/neogit/commands.txt");
+    FILE* file = fopen(commands, "r");
+    if(file == NULL)
+    {
+        fprintf(stderr, "Failed to open command\n");
+        return 1;
+    }
+    char a[100];
+    bool command_valid = false;
+    while(fgets(a, sizeof(a), file)!= NULL)
+    {
+        size_t ln = strlen(a);
+        a[ln-1] = '\0';
+        if(strstr(argv2, a) != NULL)
+        {
+            command_valid = true;
+            break;
+        }
+    }
+    fclose(file);
+    if(!command_valid)
+    {
+        fprintf(stderr, "Not a valid command to be aliased\n");
+        return 1;
+    }
+    char* str = (char*)malloc(100);
+    if((str = strstr(argv1, "alias.")) == NULL)
+    {
+        fprintf(stderr, "Invalid alias command\n");
+        return 1;
+    }
+    str = str + strlen("alias.");
+    fprintf(alias_file, "%s  %s\n", str, argv2);
+    fclose(alias_file);
+    FILE* file2 = fopen("/home/asus/Documents/neogit/.alias_path.txt", "a");
+    if(file2 == NULL)
+    {
+        fprintf(stderr, "Error openning alias list\n");
+        return 1;
+    }
+    fprintf(file2, "%s", alias_path);
+    fclose(file2);
 
-//             if (strcmp(tmp_cwd, "/") != 0)
-//             {
-//                 if (chdir("..") != 0)
-//                     return 1;
-//             }
-//         }
-//         if(exists)
-//         {
-//             break;
-//         }
-//         closedir(dir);
+    return 0;
+}
+int global_alias(int argc, char* argv[])
+{
+    if(argc != 5)
+    {
+        fprintf(stderr, "Wrong number of arguements in alias global\n");
+        return 0;
+    }
+    FILE *global = fopen("/home/asus/Documents/neogit/alias_global.txt", "a");
+    if(global == NULL)
+    {
+        fprintf(stderr, "Error in global alias\n");
+        return 1;
+    }
+    char* lines = (char*)malloc(2000);
+    FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
+    if(commands == NULL)
+    {
+        fprintf(stderr, "Error in global alias\n");
+        return 1;
+    }
+    char* name = (char*)malloc(2000);
+    char* command = (char*)malloc(2000);
+    sscanf(argv[3], "alias.%s", name);
+    strcpy(command, argv[4]);
+    bool exist = false;
+    while(fgets(lines, 1000, commands) != NULL)
+    {
+        int ln = strlen(lines);
+        lines[ln - 1] = '\0';
+        if(strstr(command, lines) == NULL)
+        {
+            exist = true;
+            break;
+        }
+    }
+    char* address = (char*)malloc(2000);
+    if(exist)
+    {
+        fprintf(global, "%s  %s\n", name, command);
+    }
+    else{
+        fprintf(stderr, "The given command in not a neogit command\n");
+        return 1;
+    }
+    FILE* file = fopen("/home/asus/Documents/neogit/.alias_path.txt", "a");
+    fclose(file);
+    file = fopen("/home/asus/Documents/neogit/.alias_path.txt", "r");
+    if(file == NULL)
+    {
+        fprintf(stderr, "Failed to open the file\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    while(fgets(a, MAX_ADDRESS_SIZE, file) != NULL)
+    {
+        size_t ln = strlen(a);
+        a[ln-1] = '\0';
+        FILE* tmp = fopen(a,"a");
+        fprintf(tmp, "%s  %s\n", name, command);
+        fclose(tmp);
 
-//     } while (strcmp(tmp_cwd, "/") != 0);
-//     if(exists)
-//     {
-//         strcat(add, "/.neogit");
-//         chdir(add);
-//     DIR* dir = opendir(".");
-//     getcwd(add, sizeof(add));
-//     if(dir == NULL)
-//     {
-//         fprintf(stderr, "Error occured in alias\n");
-//         return 1;
-//     }
-//     strcat(add, "/alias.txt");
-//     FILE *alias_file = fopen(add, "a");
-//     if(alias_file == NULL)
-//
-//         fprintf(stderr, "Error occured in openning alias.txt\n");
-//         return 1;
-//     }
-//     char* name = (char*)malloc(1000);
-//     sscanf(argv[2], "alias.%s", name);
-//     // printf("name is %s\n", name);
-//     char* command = (char*)malloc(2000);
-//     strcpy(command, argv[3]);
-//     command = command + strlen("neogit") + 1;
-//     // printf("command is %s\n", command);
-//     char* tmp = (char*)malloc(2000);
-//     FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
-//     if(commands == NULL)
-//     {
-//         fprintf(stderr, "Error occured in opeening commands file\n");
-//         return 1;
-//     }
-//     bool ok= false;
-//     while(fgets(tmp, 2000, commands) != NULL)
-//     {
-//         int ln = strlen(tmp);
-//         tmp[ln -1] = '\0';
-//         if(strcmp(command, tmp) == 0)
-//         {
-//             ok = true;
-//             break;
-//         }
-//     }
-//     if(ok)
-//     {
-//         fprintf(alias_file, "%s  %s\n", name, command);
-//     }
-//     else{
-//         fprintf(stderr, "Given command isn't a neogit command\n");
-//         return 1;
-//     }
-//     closedir(dir);
-//     fclose(commands);
-//     fclose(alias_file);
-//     free(tmp);
-//     free(name);
-//     }
-//     else{
-//         fprintf(stderr, "The repository has not been initialized\n");
-//         return 1;
-//     }
-//     free(cwd);
-//     free(tmp_cwd);
-//     return 0;
-// }
-//     {
-//         DIR *dir = opendir(".");
-//         getcwd(add, 2000);
-//         if (dir == NULL)
-//         {
-//             fprintf(stderr, "Error openning directory in init\n");
-//             return 1;
-//         }
-//         while ((entry = readdir(dir)) != NULL)
-//         {
-//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-//             {
-//                 exists = true;
-//                 break;
-//             }
-//         if (getcwd(tmp_cwd, 2000) == NULL)
-//                 return 1;
+    }
+    fclose(file);
+    fclose(global);
+    fclose(commands);
+    free(lines);
+    return 0;
+}
+int looggn(char* argv, int argc)
+{
+    if(argc > 4)
+    {
+        fprintf(stderr, "Too many arguements for log -n\n");
+        return 1;
+    }
+    if(argc < 4)
+    {
+        fprintf(stderr, "few arguements for log -n\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    strcat(repo, "/.neogit");
+    sprintf(log_path, "%s/.log", repo);
+    FILE* log_file = fopen(log_path, "r");
+    if(log_file == NULL)
+    {
+        fprintf(stderr, "Failed to open log file\n");
+        return 1;
+    }
+    if(!isdigit(argv))
+    {
+        fprintf(stderr, "Invalid command\n");
+        return 1;
+    }
+    int ln = strlen(argv);
+    int value = 1;
+    int num = 0;
+    for(int i = 0; i < ln; i++)
+    {
+        value = value * 10;
+    }
+    value /= 10;
+    for(int i = 0; i < ln; i++)
+    {
+        num += value* (argv[i] - 48);
+        value /= 10;
+    }
+    char s[MAX_ADDRESS_SIZE];
+    int count = 0;
+    while(fgets(s, sizeof(s), log_file) != NULL)
+    {
+        count++;
+    }
+    if(count > num * 9)
+    {
+        fprintf(stderr, "Number of commits are less than the requeated number\n");
+        return 1;
+    }
+    rewind(log_file);
+    for(int i = 0; i < 9 * num; i++)
+    {
+        fgets(s, sizeof(s), log_file);
+        fprintf(stdout, "%s", s);
+    }
+    fclose(log_file);
+    return 0;
+}
+int branch_log(char* argv, int argc)
+{
+    if(argc > 4)
+    {
+        fprintf(stderr, "Too many arguements for log -n\n");
+        return 1;
+    }
+    if(argc < 4)
+    {
+        fprintf(stderr, "few arguements for log -n\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    strcat(repo, "/.neogit");
+    sprintf(log_path, "%s/.log", repo);
+    char* log_path_copy = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(log_path_copy, "%s/log.copy.txt", repo);
+    command = (char*)malloc(MAX_ADDRESS_SIZE);
+    FILE* log_copy = fopen(log_path_copy, "w");
+    if(log_copy == NULL)
+    {
+        fpritnf(stderr, "Failed to open log copy\n");
+        return 1;
+    }
+    FILE* log_file = fopen(log_path, "r");
+    if(log_file == NULL)
+    {
+        fprintf(stderr, "Failed to open log file\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    while(fgets(a,sizeof(a), log_file) != NULL)
+    {
+        fprintf(log_copy, "%s", a);
+    }
+    rewind(log_file);
+    fclose(log_copy);
+    log_copy = fopen(log_path_copy, "r");
+    int count = 0;
+    while(fgets(a, sizeof(a), log_file) != NULL)
+    {
+        count++;
+        if((count+3) % 9 == 0)
+        {
+            if(strstr(a, argv) != NULL)
+            {
+                for(int i = 0; i < count - 6; i++)
+                {
+                    fgets(a, sizeof(a), log_copy);
+                }
+                for(int i = 0; i < 9; i++)
+                {
+                    fgets(a, sizeof(a), log_copy);
+                    fprintf(stdout, "%s", a);
+                }
+            }
+        }
+        rewind(log_copy);
+    }
+fclose(log_file);
+remove(log_path_copy);
+return 0;
+}
+int author_log(char* argv, int argc)
+{
+    if(argc > 4)
+    {
+        fprintf(stderr, "Too many arguements for log -n\n");
+        return 1;
+    }
+    if(argc < 4)
+    {
+        fprintf(stderr, "few arguements for log -n\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    strcat(repo, "/.neogit");
+    sprintf(log_path, "%s/.log", repo);
+    char* log_path_copy = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(log_path_copy, "%s/log.copy.txt", repo);
+    command = (char*)malloc(MAX_ADDRESS_SIZE);
+    FILE* log_copy = fopen(log_path_copy, "w");
+    if(log_copy == NULL)
+    {
+        fpritnf(stderr, "Failed to open log copy\n");
+        return 1;
+    }
+    FILE* log_file = fopen(log_path, "r");
+    if(log_file == NULL)
+    {
+        fprintf(stderr, "Failed to open log file\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    while(fgets(a,sizeof(a), log_file) != NULL)
+    {
+        fprintf(log_copy, "%s", a);
+    }
+    rewind(log_file);
+    fclose(log_copy);
+    log_copy = fopen(log_path_copy, "r");
+    int count = 0;
+    while(fgets(a, sizeof(a), log_file) != NULL)
+    {
+        count++;
+        if((count+5) % 9 == 0)
+        {
+            if(strstr(a, argv) != NULL)
+            {
+                for(int i = 0; i < count - 6; i++)
+                {
+                    fgets(a, sizeof(a), log_copy);
+                }
+                for(int i = 0; i < 9; i++)
+                {
+                    fgets(a, sizeof(a), log_copy);
+                    fprintf(stdout, "%s", a);
+                }
+            }
+        }
+        rewind(log_copy);
+    }
+fclose(log_file);
+remove(log_path_copy);
+return 0;
+}
+int word_log(char* argv, int argc)
+{
+    if(argc > 4)
+    {
+        fprintf(stderr, "Too many arguements for log -n\n");
+        return 1;
+    }
+    if(argc < 4)
+    {
+        fprintf(stderr, "few arguements for log -n\n");
+        return 1;
+    }
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    char a[MAX_ADDRESS_SIZE];
+    strcat(repo, "/.neogit");
+    sprintf(log_path, "%s/.log", repo);
+    char* log_path_copy = (char*)malloc(MAX_ADDRESS_SIZE);
+    sprintf(log_path_copy, "%s/log.copy.txt", repo);
+    command = (char*)malloc(MAX_ADDRESS_SIZE);
+    FILE* log_copy = fopen(log_path_copy, "w");
+    if(log_copy == NULL)
+    {
+        fpritnf(stderr, "Failed to open log copy\n");
+        return 1;
+    }
+    FILE* log_file = fopen(log_path, "r");
+    if(log_file == NULL)
+    {
+        fprintf(stderr, "Failed to open log file\n");
+        return 1;
+    }
+    char* a = (char*)malloc(MAX_ADDRESS_SIZE);
+    while(fgets(a, MAX_ADDRESS_SIZE, log_file) != NULL)
+    {
+        fprintf(log_copy, "%s", a);
+    }
+    rewind(log_file);
+    fclose(log_copy);
+    log_copy = fopen(log_path_copy, "r");
+    int count = 0;
+    if(log_copy == NULL)
+    {
+        fpritnf(stderr, "Failed to open log copy\n");
+        return 1;
+    }
+    char* b = (char*)malloc(MAX_ADDRESS_SIZE);
+    while(fgets(a, MAX_ADDRESS_SIZE ,log_file) != NULL)
+    {
+        count++;
+        if((count+3) % 9 == 0)
+        {
+            strcpy(b,a);
+            b = b + strlen("commit message is : ");
+            if(strstr(b, argv) != NULL)
+            {
+                for(int i = 0; i < count - 6; i++)
+                {
+                    fgets(a, MAX_ADDRESS_SIZE, log_copy);
+                }
+                for(int i = 0; i < 9; i++)
+                {
+                    fgets(a, MAX_ADDRESS_SIZE, log_copy);
+                    fprintf(stdout, "%s", a);
+                }
+            }
+        }
+        rewind(log_copy);
+    }
+fclose(log_file);
+remove(log_path_copy);
+return 0;
+}
+int checkout_branch(char* argv)
+{
+    DIR* dir = opendir(repo);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Failed to open .neogit\n");
+        return 1;
+    }
+    struct dirent* entry;
+    stage_exists = false;
+    while((entry = readdir(dir)) != NULL)
+    {
+        if(strcmp(entry->d_name, "stage") == 0)
+        {
+            stage_exists = true;
+            break;
+        }
+    }
+    if(stage_exists)
+    {
+        fprintf(stderr, "Staging areas has some uncommited changes\n");
+        return 1;
+    }
+    sprintf(commit_info, "%s/%s/.lastcommit.txt", repo, argv);
+    FILE* last = fopen(commit_info, "r");
+    if(last == NULL)
+    {
+        fprintf(stderr, "Failed to open last commit in branch %s\n", argv);
+        return 1;
+    }
+    char* name2 = (char*)malloc(100);
+    fscanf(last, "%s", name2);
+    sprintf(commit_path, "%s/%s", repo, name2);
+    sprintf(current_branch, "%s/.branches.txt", repo);
+    FILE* b = fopen(current_branch, "r");
+    if(b == NULL)
+    {
+        fprintf(stderr, "Failed to open current branch list\n");
+        return 1;
+    }
+    char c[200];
+    fgets(c, sizeof(c), b);
+    fclose(b);
+    b = fopen(current_branch, "w");
+    if(b == NULL)
+    {
+        fprintf(stderr, "Failed to open current branch list\n");
+        return 1;
+    }
+    fprintf(b, "%s/%s", argv, c);
+    fclose(b);
 
-//             if (strcmp(tmp_cwd, "/") != 0)
-//             {
-//                 if (chdir("..") != 0)
-//                     return 1;
-//             }
-//         }
-//         if(exists)
-//         {
-//             break;
-//         }
-//         closedir(dir);
 
-//     } while (strcmp(tmp_cwd, "/") != 0);
-//     if(exists)
-//     {
-//         strcat(add, "/.neogit");
-//         chdir(add);
-//     DIR* dir = opendir(".");
-//     getcwd(add, sizeof(add));
-//     if(dir == NULL)
-//     {
-//         fprintf(stderr, "Error occured in alias\n");
-//         return 1;
-//     }
-//     strcat(add, "/alias.txt");
-//     FILE *alias_file = fopen(add, "a");
-//     if(alias_file == NULL)
-//
-//         fprintf(stderr, "Error occured in openning alias.txt\n");
-//         return 1;
-//     }
-//     char* name = (char*)malloc(1000);
-//     sscanf(argv[2], "alias.%s", name);
-//     // printf("name is %s\n", name);
-//     char* command = (char*)malloc(2000);
-//     strcpy(command, argv[3]);
-//     command = command + strlen("neogit") + 1;
-//     // printf("command is %s\n", command);
-//     char* tmp = (char*)malloc(2000);
-//     FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
-//     if(commands == NULL)
-//     {
-//         fprintf(stderr, "Error occured in opeening commands file\n");
-//         return 1;
-//     }
-//     bool ok= false;
-//     while(fgets(tmp, 2000, commands) != NULL)
-//     {
-//         int ln = strlen(tmp);
-//         tmp[ln -1] = '\0';
-//         if(strcmp(command, tmp) == 0)
-//         {
-//             ok = true;
-//             break;
-//         }
-//     }
-//     if(ok)
-//     {
-//         fprintf(alias_file, "%s  %s\n", name, command);
-//     }
-//     else{
-//         fprintf(stderr, "Given command isn't a neogit command\n");
-//         return 1;
-//     }
-//     closedir(dir);
-//     fclose(commands);
-//     fclose(alias_file);
-//     free(tmp);
-//     free(name);
-//     }
-//     else{
-//         fprintf(stderr, "The repository has not been initialized\n");
-//         return 1;
-//     }
-//     free(cwd);
-//     free(tmp_cwd);
-//     return 0;
-// }
-// int global_alias(int argc, char const* argv[])
-// {
-//     if(argc != 5)
-//     {
-//         fprintf(stderr, "Wrong number of arguements in alias global\n");
-//         return 0;
-//     }
-//     FILE *global = fopen("/home/asus/Documents/neogit/alias_global.txt", "a");
-//     if(global == NULL)
-//     {
-//         fprintf(stderr, "Error in global alias\n");
-//         return 1;
-//     }
-//     char* lines = (char*)malloc(2000);
-//     FILE* commands = fopen("/home/asus/Documents/neogit/commands.txt", "r");
-//     if(commands == NULL)
-//     {
-//         fprintf(stderr, "Error in global alias\n");
-//         return 1;
-//     }
-//     char* name = (char*)malloc(2000);
-//     char* command = (char*)malloc(2000);
-//     sscanf(argv[3], "alias.%s", name);
-//     strcpy(command, argv[4]);
-//     command = command + strlen("neogit") + 1;
-//     bool exist = false;
-//     while(fgets(lines, 1000, commands) != NULL)
-//     {
-//         int ln = strlen(lines);
-//         lines[ln - 1] = '\0';
-//         if(strcmp(command, lines) == 0)
-//         {
-//             exist = true;
-//             break;
-//         }
-//     }
-//     char* address = (char*)malloc(2000);
-//     if(exist)
-//     {
-//         fprintf(global, "%s  %s\n", name, command);
-//     }
-//     else{
-//         fprintf(stderr, "The given command in not a neogit command\n");
-//         return 1;
-//     }
-
-//     fclose(global);
-//     fclose(commands);
-//     free(lines);
-//     return 0;
-// }
-// int username_alias(int argc, char const* argv[])
-// {
-//     char *cwd = (char *)malloc(2000);
-//     char *tmp_cwd = (char *)malloc(2000);
-//     char *address = (char *)malloc(2000);
-//     struct dirent *entry;
-//     bool exists = 0;
-//     if (getcwd(cwd, 2000) == NULL)
-//     {
-//         fprintf(stderr, "Error in configuration\n");
-//         return 1;
-//     }
-//     do
-//     {
-//         DIR *dir = opendir(".");
-//         if (dir == NULL)
-//         {
-//             fprintf(stderr, "Error occured\n");
-//             return 1;
-//         }
-//         while ((entry = readdir(dir)) != NULL)
-//         {
-//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-//             {
-//                 getcwd(address, 2000);
-//                 exists = true;
-//                 break;
-//             }
-//         }
-//         if (exists)
-//             break;
-
-//         if (getcwd(tmp_cwd, 2000) == NULL)
-//         {
-//             fprintf(stderr, "Error occured\n");
-//             return 1;
-//         }
-//         if (strcmp(tmp_cwd, "/") != 0)
-//         {
-//             if (chdir("..") != 0)
-//             {
-//                 fprintf(stderr, "Error occured\n");
-//                 return 1;
-//             }
-//         }
-//     closedir(dir);
-//     } while (strcmp(tmp_cwd, "/") != 0);
-//     if (exists)
-//     {
-//         strcat(address, "/.neogit");
-//         chdir(address);
-//         DIR* dir = opendir(".");
-//         bool found = false;
-//         while((entry = readdir(dir)) != NULL)
-//         {
-//             if((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "config") == 0))
-//             {
-//                 found = true;
-//                 break;
-//             }
-//         }
-//         if(!found)
-//         {
-//             if (mkdir("config", 0755) != 0)
-//             {
-//                 fprintf(stderr, "Error occured in config\n");
-//                 return 1;
-//             }
-//         }
-//         strcat(address, "/config");
-//         chdir(address);
-//         closedir(dir);
-//         dir = opendir(".");
-//         strcat(address, "/username");
-//         FILE* file = fopen(address, "w");
-//         fprintf(file, "%s", argv[2]);
-//         fclose(file);
-//         closedir(dir);
-//     }
-//     return 0;
-// }
-// int email_alias(int argc, char const* argv[])
-// {
-//     char *cwd = (char *)malloc(2000);
-//     char *tmp_cwd = (char *)malloc(2000);
-//     char *address = (char *)malloc(2000);
-//     struct dirent *entry;
-//     bool exists = 0;
-//     if (getcwd(cwd, 2000) == NULL)
-//     {
-//         fprintf(stderr, "Error in configuration\n");
-//         return 1;
-//     }
-//     do
-//     {
-//         DIR *dir = opendir(".");
-//         if (dir == NULL)
-//         {
-//             fprintf(stderr, "Error occured\n");
-//             return 1;
-//         }
-//         while ((entry = readdir(dir)) != NULL)
-//         {
-//             if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, ".neogit") == 0))
-//             {
-//                 getcwd(address, 2000);
-//                 exists = true;
-//                 break;
-//             }
-//         }
-//         if (exists)
-//             break;
-
-//         if (getcwd(tmp_cwd, 2000) == NULL)
-//         {
-//             fprintf(stderr, "Error occured\n");
-//             return 1;
-//         }
-//         if (strcmp(tmp_cwd, "/") != 0)
-//         {
-//             if (chdir("..") != 0)
-//             {
-//                 printf("4");
-//                 fprintf(stderr, "Error occured\n");
-//                 return 1;
-//             }
-//         }
-//     closedir(dir);
-//     } while (strcmp(tmp_cwd, "/") != 0);
-
-//     if (exists)
-//     {
-//         strcat(address, "/.neogit");
-//         chdir(address);
-//         DIR* dir = opendir(".");
-//         bool found = false;
-//         while((entry = readdir(dir)) != NULL)
-//         {
-//             if((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "config") == 0))
-//             {
-//                 found = true;
-//                 break;
-
-//             }
-//         }
-//         if(!found)
-//         {
-//             if (mkdir("config", 0755) != 0)
-//             {
-//                 fprintf(stderr, "Error occured in config\n");
-//                 return 1;
-//             }
-//         }
-//         strcat(address, "/config");
-//         chdir(address);
-//         closedir(dir);
-//         dir = opendir(".");
-//         strcat(address, "/useremail");
-//         FILE* file = fopen(address, "w");
-//         fprintf(file, "%s", argv[2]);
-//         fclose(file);
-//         closedir(dir);
-//     }
-//     return 0;
-//}
-// int username_global_alias(int argc, char const* argv[])
-// {
-//     char *address = "/home/asus/Documents/neogit";
-//     chdir(address);
-//     DIR *dir = opendir(".");
-//     if(dir == NULL)
-//     {
-//         fprintf(stderr, "Error in openning neogit directory\n");
-//         return 1;
-//     }
-//     struct dirent *entry;
-//     bool exists = false;
-//     char *cwd = (char *)malloc(2000);
-//     repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
-//     char* repo = (char*)malloc(2000);
-//     while ((entry = readdir(dir)) != NULL)
-//     {
-//         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
-//         {
-//             if (getcwd(cwd, 2000) == NULL)
-//             {
-//                 fprintf(stderr, "Error in global configuration\n");
-//                 return 1;
-//             }
-//             exists = true;
-//             break;
-//         }
-//     }
-//     if (!exists)
-//     {
-//         if (mkdir("global_config", 0755) != 0)
-//         {
-//             fprintf(stderr, "Error in global configuration\n");
-//             return 1;
-//         }
-//     }
-//     strcat(cwd, "/global_config");
-//     chdir(cwd);
-//     dir = opendir(".");
-//         strcat(cwd, "/global_name");
-//         FILE *file = fopen(cwd, "w");
-//         fprintf(file, "%s\n", argv[2]);
-//         fclose(file);
-
-//     closedir(dir);
-//    while(fgets(repo, 1000, repo_list) != NULL)
-//    {
-//         int length = strlen(repo);
-//         repo[length - 1] = '\0';
-//         chdir(repo);
-//         DIR* repos = opendir(".");
-//         struct dirent *direct;
-//         bool found = false;
-//         while((direct = readdir(repos)) != NULL)
-//         {
-//             if(direct->d_type == DT_DIR && (strcmp(direct->d_name, "config") == 0))
-//             {
-//                 found = true;
-//                 break;
-//             }
-//         }
-//         if(!found)
-//         {
-//             if(mkdir("config", 0755) != 0)
-//             {
-//                 fprintf(stderr, "Error in global config\n");
-//                 return 1;
-//             }
-//         }
-//         strcat(repo,"/config");
-//         chdir(repo);
-//         DIR* dir = opendir(".");
-//             strcat(repo, "/username");
-//             FILE* file = fopen(repo, "w");
-//             fprintf(file, "%s\n", argv[2]);
-//             fclose(file);
-//         closedir(dir);
-//    }
-//     free(repo);
-//     fclose(repo_list);
-//     return 0;
-// }
-// int email_global_alias(int argc, char const* argv[])
-// {
-//     char *address = "/home/asus/Documents/neogit";
-//     chdir(address);
-//     DIR *dir = opendir(".");
-//     struct dirent *entry;
-//     bool exists = false;
-//     char *cwd = (char *)malloc(2000);
-//     repo_list = fopen("/home/asus/Documents/neogit/repolist.txt", "r");
-//     char* repo = (char*)malloc(2000);
-//     while ((entry = readdir(dir)) != NULL)
-//     {
-//         if ((entry->d_type == DT_DIR) && (strcmp(entry->d_name, "global_config") == 0))
-//         {
-//             if (getcwd(cwd, 2000) == NULL)
-//             {
-//                 fprintf(stderr, "Error in global configuration\n");
-//                 return 1;
-//             }
-//             exists = true;
-//             break;
-//         }
-//     }
-//     if (!exists)
-//     {
-//         if (mkdir("global_config", 0755) != 0)
-//         {
-//             fprintf(stderr, "Error in global configuration\n");
-//             return 1;
-//         }
-//     }
-//     closedir(dir);
-//     strcat(cwd, "/global_config");
-//     chdir(cwd);
-//     dir = opendir(".");
-//         strcat(cwd, "/global_email");
-//         FILE *file = fopen(cwd, "w");
-//         fprintf(file, "%s\n", argv[2]);
-//         fclose(file);
-
-//     closedir(dir);
-//    while(fgets(repo, 1000, repo_list) != NULL)
-//    {
-//         int length = strlen(repo);
-//         repo[length - 1] = '\0';
-//         chdir(repo);
-//         DIR* repos = opendir(".");
-//         struct dirent *direct;
-//         bool found = false;
-//         while((direct = readdir(repos)) != NULL)
-//         {
-//             if(direct->d_type == DT_DIR && (strcmp(direct->d_name, "config") == 0))
-//             {
-//                 found = true;
-//                 break;
-//             }
-//         }
-//         if(!found)
-//         {
-//             if(mkdir("config", 0755) != 0)
-//             {
-//                 fprintf(stderr, "Error in global config\n");
-//                 return 1;
-//             }
-//         }
-//         strcat(repo,"/config");
-//         chdir(repo);
-//         DIR* dir = opendir(".");
-//             strcat(repo, "/useremail");
-//             FILE* file = fopen(repo, "w");
-//             fprintf(file, "%s\n", argv[2]);
-//             fclose(file);
-//         closedir(dir);
-//    }
-//     free(repo);
-//     fclose(repo_list);
-//     return 0;
-// }
+    return 0;
+}
+int checkout_commit(char* argv)
+{
+    DIR* dir = opendir(repo);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Failed to open .neogit\n");
+        return 1;
+    }
+    
+}
