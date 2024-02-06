@@ -30,6 +30,8 @@ char *commit_path;
 char *commit_info;
 char *branch_list;
 char *id_path;
+bool in_stage;
+
 int id;
 char *repo;
 int run_init(int argc, char *argv[]);
@@ -2166,11 +2168,206 @@ int status()
     while((entry2 = readdir(dir)) != NULL)
     {
         if(entry2 -> d_type == DT_DIR)  continue;
+        bool in_commit = false;
+        in_stage = false;
         while((entry = readdir(last)) != NULL)
         {
-            
+            if(entry->d_type == DT_REG && strcmp(entry->d_name, entry2->d_name) == 0)
+            {
+                in_commit = true;
+                char* new_src = (char*)malloc(MAX_ADDRESS_SIZE);
+                char* new_des = (char*)malloc(MAX_ADDRESS_SIZE);
+                sprintf(new_src, "%s/%s", cwd, entry2->d_name);
+                sprintf(new_des, "%s/%s", commit_path, entry->d_name);
+                FILE* fptr1 = fopen(new_src, "r");
+                if(fptr1 == NULL)
+                {
+                    fprintf(stderr, "Failed to open fptr1\n");
+                    return 1;
+                }
+                FILE* fptr2 = fopen(new_des, "r");
+                if(fptr2 == NULL)
+                {
+                    fprintf(stderr, "Failed to open fptr2\n");
+                    return 1;
+                }
+                int line;
+                int col;
+                int diff = compareFile(fptr1, fptr2, &line, &col);
+                if(diff == 0)
+                    break;
+                if(diff == 1)
+                {
+                    char sign = stage_check(entry->d_name, stage_path);
+                    if(sign == '!')
+                    {
+                        fprintf(stderr, "Error in stage check\n");
+                        return 1;
+                    }
+                    fprintf(stdout, "%s  M%c", entry->d_name,sign);
+                    break;
+                }
+            }
+        }
+        if(!in_commit)
+        {
+            char sign = stage_check(entry->d_name, stage_path);
+            if(sign == '!')
+            {
+                    fprintf(stderr, "Error in stage check\n");
+                    return 1;
+            }
+            fprintf(stdout, "%s  A%c", entry->d_name, sign);
         }
     }
+    closedir(dir);
+    closedir(last);
+    dir = opendir(cwd);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Error openning current directory\n");
+        return 1;
+    }
+    last = opendir(commit_path);
+    if(last == NULL)
+    {
+        fprintf(stderr,"Failed to open last commit\n");
+        return 1;
+    }
+    while((entry = readdir(last)) != NULL)
+    {
+        char sign;
+        bool ommited = true;
+        if(entry->d_type == DT_DIR)  continue;
+        if((strcmp(entry->d_name , ".alias.txt") == 0) || (strcmp(entry->d_name , ".branches.txt") == 0) || (strcmp(entry->d_name , ".current_branch.txt") == 0)) continue;
+        if((strcmp(entry->d_name , ".id.txt") == 0) || (strcmp(entry->d_name , ".log") == 0) ||(strcmp(entry->d_name , ".shortcut.txt") == 0) || (strcmp(entry->d_name , "stage_list.txt") == 0))  continue;
+        while((entry2 = readdir(dir)) != NULL)
+        {
+            if(strcmp(entry->d_name, entry2->d_name) == 0)
+            {
+                ommited = false;
+                break;
+            }
+        }
+        if(ommited)
+        {
+            char sign = stage_check(entry->d_name, stage_path);
+            if(sign == '!')
+            {
+                fprintf(stderr, "Error in stage check\n");
+                return 1;
+            }
+            fprintf(stdout, "%s  D%c", entry->d_name, sign);
+        }
+        
+    }
+
     
- 
+ return 0;
+}
+char stage_check(char* name, char* stage_path)
+{
+    struct dirent* enter;
+    DIR* dir = opendir(stage_path);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Failed to open stage area\n");
+        return '!';
+    }
+    while((enter = readdir(dir)) != NULL)
+    {
+        if(enter->d_type == DT_DIR) continue;
+        else{
+            if(strcmp(enter->d_name, name)==0)
+            {
+                in_stage =true;
+                break;
+            }
+
+        }
+    }
+    if(in_stage)  return '+';
+    else{
+        return '-';
+    }  
+}
+// int main()
+// {
+//     /* File pointer to hold reference of input file */
+//     FILE * fPtr1; 
+//     FILE * fPtr2;
+//     char path1[100];
+//     char path2[100];
+
+//     int diff;
+//     int line, col;
+
+
+//     /* Input path of files to compare */
+//     printf("Enter path of first file: ");
+//     scanf("%s", path1);
+//     printf("Enter path of second file: ");
+//     scanf("%s", path2);
+
+
+//     /*  Open all files to compare */
+//     fPtr1 = fopen(path1, "r");
+//     fPtr2 = fopen(path2, "r");
+
+//     /* fopen() return NULL if unable to open file in given mode. */
+//     if (fPtr1 == NULL || fPtr2 == NULL)
+//     {
+//         /* Unable to open file hence exit */
+//         printf("\nUnable to open file.\n");
+//         printf("Please check whether file exists and you have read privilege.\n");
+//         exit(EXIT_FAILURE);
+//     }
+
+
+//     /* Call function to compare file */
+//     diff = compareFile(fPtr1, fPtr2, &line, &col);
+
+//     if (diff == 0)
+//     {
+//         printf("\nBoth files are equal.");
+//     }
+//     else 
+//     {
+//         printf("\nFiles are not equal.\n");
+//         printf("Line: %d, col: %d\n", line, col);
+//     }
+
+
+//     /* Finally close files to release resources */
+//     fclose(fPtr1);
+//     fclose(fPtr2);
+
+//     return 0;
+// }
+int compareFile(FILE * fPtr1, FILE * fPtr2, int * line, int * col)
+{
+    char ch1, ch2;
+
+    *line = 1;
+    *col  = 0;
+
+    do
+    {
+        ch1 = fgetc(fPtr1);
+        ch2 = fgetc(fPtr2);
+        if (ch1 == '\n')
+        {
+            *line += 1;
+            *col = 0;
+        }
+        if (ch1 != ch2)
+            return 1;
+
+        *col  += 1;
+
+    } while (ch1 != EOF && ch2 != EOF);
+    if (ch1 == EOF && ch2 == EOF)
+        return 0;
+    else
+        return 1;
 }
