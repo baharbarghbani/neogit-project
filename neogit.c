@@ -1249,6 +1249,12 @@ int commit(char *argv, int argc)
     char* command = (char*)malloc(2*MAX_ADDRESS_SIZE);
     sprintf(command, "mkdir -p %s", commit_path);
     system(command);
+    dir = opendir(cwd);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Error openning repository\n");
+        return 1;
+    }
     char* in_commit = (char*)malloc(MAX_ADDRESS_SIZE);
     sprintf(in_commit, "%s/stage", commit_path);
     sprintf(command, "cp -r %s %s", stage_path,in_commit);
@@ -2110,5 +2116,61 @@ int checkout_commit(char* argv)
         fprintf(stderr, "Failed to open .neogit\n");
         return 1;
     }
+
+
+    return 0;
+
+}
+int status()
+{
+    exists = false;
+    repo_check2();
+    if(!exists)
+    {
+        fprintf(stderr, "Repository has not been initialized\n");
+        return 1;
+    }
+    char cwd[MAX_ADDRESS_SIZE];
+    if(getcwd(cwd, sizeof(cwd)) == NULL)
+    {
+        fprintf(stderr, "Can't get the current working directory\n");
+        return 1;
+    }
+    strcat(repo, "/.neogit");
+    sprintf(stage_path, "%s/stage", repo);
+    DIR* dir = opendir(cwd);
+    if(dir == NULL)
+    {
+        fprintf(stderr, "Error openning current directory\n");
+        return 1;
+    }
+    DIR* last;
+    struct dirent* entry;
+    struct dirent* entry2;
+    sprintf(commit_info, "%s/.id.txt", repo);
+    FILE* commit_id = fopen(commit_info, "r");
+    if(commit_id == NULL)
+    {
+        fprintf(stderr, "Failed to open id file\n");
+        return 1;
+    }
+    fscanf(commit_id, "#%d", &id);
+    int lastcommit = id - 1;
+    sprintf(commit_path, "%s/#%d", repo, id);
+    last = opendir(commit_path);
+    if(last == NULL)
+    {
+        fprintf(stderr, "Failed to open last commit folder\n");
+        return 1;
+    }
+    while((entry2 = readdir(dir)) != NULL)
+    {
+        if(entry2 -> d_type == DT_DIR)  continue;
+        while((entry = readdir(last)) != NULL)
+        {
+            
+        }
+    }
     
+ 
 }
